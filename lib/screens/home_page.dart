@@ -4,7 +4,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
-import 'package:wellbeing_app/models/catgory_group.dart';
+import 'package:wellbeing_app/models/category_group.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 import 'package:wellbeing_app/utils/enums.dart';
 
@@ -15,33 +15,49 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: BlocBuilder<AppUsageBloc, AppUsageState>(
-              builder: (context, state) {
-                if (state is AppUsageLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state is AppUsageError) {
-                  return Center(child: Text(state.message));
-                }
-                if (state is AppUsageLoaded) {
-                  final List<CategoryGroup> categoryGroupList =
-                      state.categoryGroupList;
+        child: BlocBuilder<AppUsageBloc, AppUsageState>(
+          builder: (context, state) {
+            if (state is AppUsageLoading) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Color(AppConstants.primary),
+                ),
+              );
+            }
+            if (state is AppUsageError) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: TextStyle(
+                    color: Color(0xFF404847),
+                    fontFamily: "Manrope",
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                ),
+              );
+            }
+            if (state is AppUsageLoaded) {
+              final List<CategoryGroup> categoryGroupList =
+                  state.categoryGroupList;
 
-                  // Total usage across all categories
-                  final Duration totalUsage = categoryGroupList.fold(
-                    Duration.zero,
-                    (sum, group) => sum + group.totalUsage,
-                  );
+              final Duration totalUsage = categoryGroupList.fold(
+                Duration.zero,
+                (sum, group) => sum + group.totalUsage,
+              );
 
-                  final double percent = AppConstants.findPercentage(
-                    240,
-                    totalUsage.inMinutes,
-                  ).clamp(0.0, 1.0); // ✓ safer than inline ternary
-
-                  return Column(
+              final double percent = AppConstants.findPercentage(
+                240,
+                totalUsage.inMinutes,
+              ).clamp(0.0, 1.0);
+  
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: Column(
                     children: [
                       CircularPercentIndicator(
                         radius: 110.0,
@@ -116,7 +132,6 @@ class HomePage extends StatelessWidget {
                           final category = categoryGroupList[index];
                           return Container(
                             width: double.infinity,
-                            padding: EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEDEEED),
                               borderRadius: BorderRadius.circular(16),
@@ -124,37 +139,58 @@ class HomePage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Padding(
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Color(
+                                      AppConstants.primary,
+                                    ).withAlpha(24),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                  ),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 12,
+                                    vertical: 10,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        category.category.displayName,
-                                        style: TextStyle(
-                                          color: Color(0xFF191C1C),
-                                          fontFamily: "Manrope",
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 24,
-                                          height: 0,
-                                          letterSpacing: 0,
-                                        ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            category.category.displayName,
+                                            style: const TextStyle(
+                                              color: Color(0xFF191C1C),
+                                              fontFamily: "Manrope",
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 24,
+                                              height: 0,
+                                              letterSpacing: 0,
+                                            ),
+                                          ),
+                                          Text(
+                                            AppConstants.formatDuration(
+                                              category.totalUsage,
+                                            ),
+                                            style: const TextStyle(
+                                              color: Color(0xFF191C1C),
+                                              fontFamily: "Manrope",
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 12,
+                                              height: 0,
+                                              letterSpacing: 0,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        AppConstants.formatDuration(
-                                          category.totalUsage,
-                                        ),
-                                        style: TextStyle(
+                                      InkWell(
+                                        onTap: () {},
+                                        child: const Icon(
+                                          Icons.more_vert_rounded,
+                                          size: 20,
                                           color: Color(0xFF191C1C),
-                                          fontFamily: "Manrope",
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 12,
-                                          height: 0,
-                                          letterSpacing: 0,
                                         ),
                                       ),
                                     ],
@@ -164,13 +200,14 @@ class HomePage extends StatelessWidget {
                                   shrinkWrap:
                                       true, // ✓ was false — must be true inside Column
                                   physics: const NeverScrollableScrollPhysics(),
+                                  padding: EdgeInsets.symmetric(vertical: 16.0),
                                   itemCount:
                                       category.apps.length, // ✓ was missing
                                   itemBuilder: (_, i) {
                                     final app = category.apps[i];
                                     return AppInfoCard(
                                       appInfo: app,
-                                      totalUsage: totalUsage,
+                                      totalUsage: category.totalUsage,
                                     );
                                   },
                                   separatorBuilder: (_, _) {
@@ -183,12 +220,12 @@ class HomePage extends StatelessWidget {
                         },
                       ),
                     ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ),
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
       ),
     );

@@ -8,6 +8,7 @@ class CustomAppInfo {
   final String packageName;
   final Duration usage;
   final AppCategory category;
+  final bool? isLaunchable;
 
   CustomAppInfo({
     required this.name,
@@ -15,5 +16,6 @@ class CustomAppInfo {
     required this.packageName,
     required this.usage,
     required this.category,
+    required this.isLaunchable,
   });
 }

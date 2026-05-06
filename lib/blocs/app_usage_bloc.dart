@@ -4,7 +4,7 @@ import 'package:installed_apps/app_info.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
 import 'package:wellbeing_app/models/app_info.dart';
-import 'package:wellbeing_app/models/catgory_group.dart';
+import 'package:wellbeing_app/models/category_group.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
 import 'package:wellbeing_app/utils/enums.dart';
@@ -41,7 +41,11 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               icon: installedApp?.icon,
               packageName: usage.packageName,
               usage: usage.usage,
-              category: appCategoryConverter(installedApp?.category.value),
+              category: appCategoryConverter(
+                categoryInt: installedApp?.category.value,
+                packageName: usage.packageName,
+              ),
+              isLaunchable: installedApp?.isLaunchableApp,
             );
           })
           .toList();
@@ -64,6 +68,10 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               )
               .toList()
             ..sort((a, b) => b.totalUsage.compareTo(a.totalUsage));
+
+      for (final group in categoryGroups) {
+        group.apps.removeWhere((app) => app.isLaunchable != true);
+      }
 
       emit(AppUsageLoaded(categoryGroupList: categoryGroups));
     } catch (e) {

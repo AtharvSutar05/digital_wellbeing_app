@@ -6,6 +6,7 @@ enum AppCategory {
   game,
   system,
   other,
+  development,
 }
 
 extension AppCategoryExtension on AppCategory {
@@ -25,11 +26,13 @@ extension AppCategoryExtension on AppCategory {
         return 'System';
       case AppCategory.other:
         return 'Other';
+      case AppCategory.development:
+        return 'Development';
     }
   }
 }
 
-AppCategory appCategoryConverter(int? categoryInt) {
+AppCategory appCategoryConverter({required int? categoryInt, required String packageName}) {
   switch (categoryInt) {
     case 0:
       return AppCategory.game;
@@ -48,8 +51,15 @@ AppCategory appCategoryConverter(int? categoryInt) {
     case 8:
       return AppCategory.system;
     case -1:
-      return AppCategory.other;
+      return isDevelopmentApp(packageName) ? AppCategory.development : AppCategory.other;
     default:
       return AppCategory.other;
   }
+}
+
+bool isDevelopmentApp(String packageName) {
+  return packageName.startsWith("com.example") ||
+      packageName.contains("debug") ||
+      packageName.contains("dev") ||
+      packageName.startsWith("io.flutter");
 }

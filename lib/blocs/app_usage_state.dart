@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:wellbeing_app/models/app_info.dart';
-import 'package:wellbeing_app/models/catgory_group.dart';
+import 'package:wellbeing_app/models/category_group.dart';
 
 abstract class AppUsageState extends Equatable {
   const AppUsageState();

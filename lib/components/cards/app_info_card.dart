@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wellbeing_app/models/app_info.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
-import 'package:wellbeing_app/utils/enums.dart';
 
 class AppInfoCard extends StatelessWidget {
   final Duration totalUsage;
