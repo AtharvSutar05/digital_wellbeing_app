@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
 import 'package:wellbeing_app/models/category_group.dart';
+import 'package:wellbeing_app/utils/app_category_theme.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 import 'package:wellbeing_app/utils/enums.dart';
 
@@ -46,11 +47,6 @@ class HomePage extends StatelessWidget {
                 (sum, group) => sum + group.totalUsage,
               );
 
-              final double percent = AppConstants.findPercentage(
-                240,
-                totalUsage.inMinutes,
-              ).clamp(0.0, 1.0);
-  
               return SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -59,66 +55,79 @@ class HomePage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      CircularPercentIndicator(
-                        radius: 110.0,
-                        lineWidth: 12,
-                        percent: percent,
-                        circularStrokeCap: CircularStrokeCap.round,
-                        center: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "Today",
-                              style: TextStyle(
-                                color: Color(0xFF404847),
-                                fontFamily: "Manrope",
-                                fontWeight: FontWeight.w400,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              AppConstants.formatDuration(totalUsage),
-                              style: const TextStyle(
-                                color: Color(0xFF191C1C),
-                                fontFamily: "Manrope",
-                                fontWeight: FontWeight.w300,
-                                fontSize: 48,
-                                letterSpacing: -0.96,
-                              ),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.arrow_downward_rounded,
-                                  size: 14,
-                                  color: Color(0xFF32645E),
+                      SizedBox(
+                        height: 300,
+                        child: SfCircularChart(
+                          margin: EdgeInsets.zero,
+                          tooltipBehavior: TooltipBehavior(
+                            enable: true,
+                            builder: (dynamic data, _, _, _, _) {
+                              final group = data as CategoryGroup;
+                              return Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                const Text(
-                                  "12% less",
-                                  style: TextStyle(
-                                    color: Color(0xFF32645E),
+                                child: Text(
+                                  "${group.category.displayName} : ${AppConstants.formatDuration(group.totalUsage)}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
                                     fontFamily: "Manrope",
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    letterSpacing: 0.28,
+                                    fontSize: 12,
+                                    height: 0,
+                                    letterSpacing: 0,
                                   ),
                                 ),
-                              ],
+                              );
+                            },
+                          ),
+                          legend: Legend(
+                            isVisible: true,
+                            textStyle: const TextStyle(
+                              color: Color(0xFF191C1C),
+                              fontFamily: "Manrope",
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              height: 0,
+                              letterSpacing: 0,
                             ),
-                            const Text(
-                              "than yesterday",
-                              style: TextStyle(
-                                color: Color(0xFF32645E),
-                                fontFamily: "Manrope",
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                letterSpacing: 0.28,
+                            iconHeight: 16,
+                            iconWidth: 16,
+                            overflowMode: LegendItemOverflowMode.wrap,
+                            position: LegendPosition.bottom,
+                          ),
+                          series: <CircularSeries>[
+                            DoughnutSeries<CategoryGroup, String>(
+                              radius: '80%',
+                              dataSource: categoryGroupList,
+                              xValueMapper: (CategoryGroup data, _) =>
+                                  data.category.displayName,
+                              yValueMapper: (CategoryGroup data, _) =>
+                                  data.totalUsage.inMinutes,
+                              dataLabelSettings: DataLabelSettings(
+                                isVisible: true,
+                                labelPosition: ChartDataLabelPosition.outside,
+                                textStyle: const TextStyle(
+                                  fontFamily: "Manrope",
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 10,
+                                  height: 0,
+                                  letterSpacing: 0,
+                                ),
                               ),
+                              dataLabelMapper: (CategoryGroup data, _) {
+                                final percent =
+                                    (data.totalUsage.inMinutes /
+                                        totalUsage.inMinutes) *
+                                    100;
+                                return '${percent.toStringAsFixed(0)}%';
+                              },
+                              enableTooltip: true,
+                              pointColorMapper: (CategoryGroup data, _) => AppCategoryTheme.color(data.category),
                             ),
                           ],
                         ),
-                        progressColor: Color(AppConstants.primary),
                       ),
                       const SizedBox(height: 16),
                       ListView.separated(
@@ -127,7 +136,7 @@ class HomePage extends StatelessWidget {
                         itemCount: categoryGroupList.length,
                         separatorBuilder: (_, index) => const SizedBox(
                           height: 16,
-                        ), // ✓ fixed duplicate param
+                        ),
                         itemBuilder: (_, index) {
                           final category = categoryGroupList[index];
                           return Container(
@@ -153,35 +162,44 @@ class HomePage extends StatelessWidget {
                                     vertical: 10,
                                   ),
                                   child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            category.category.displayName,
-                                            style: const TextStyle(
-                                              color: Color(0xFF191C1C),
-                                              fontFamily: "Manrope",
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 24,
-                                              height: 0,
-                                              letterSpacing: 0,
-                                            ),
-                                          ),
-                                          Text(
-                                            AppConstants.formatDuration(
-                                              category.totalUsage,
-                                            ),
-                                            style: const TextStyle(
-                                              color: Color(0xFF191C1C),
-                                              fontFamily: "Manrope",
-                                              fontWeight: FontWeight.w400,
-                                              fontSize: 12,
-                                              height: 0,
-                                              letterSpacing: 0,
-                                            ),
+                                          Icon(AppCategoryTheme.icon(category.category), size: 32,),
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                category.category.displayName,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF191C1C),
+                                                  fontFamily: "Manrope",
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 24,
+                                                  height: 0,
+                                                  letterSpacing: 0,
+                                                ),
+                                              ),
+                                              Text(
+                                                AppConstants.formatDuration(
+                                                  category.totalUsage,
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Color(0xFF191C1C),
+                                                  fontFamily: "Manrope",
+                                                  fontWeight: FontWeight.w400,
+                                                  fontSize: 12,
+                                                  height: 0,
+                                                  letterSpacing: 0,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
@@ -198,11 +216,11 @@ class HomePage extends StatelessWidget {
                                 ),
                                 ListView.separated(
                                   shrinkWrap:
-                                      true, // ✓ was false — must be true inside Column
+                                      true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   padding: EdgeInsets.symmetric(vertical: 16.0),
                                   itemCount:
-                                      category.apps.length, // ✓ was missing
+                                      category.apps.length,
                                   itemBuilder: (_, i) {
                                     final app = category.apps[i];
                                     return AppInfoCard(

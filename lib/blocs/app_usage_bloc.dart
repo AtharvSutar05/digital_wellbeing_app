@@ -33,7 +33,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       };
 
       final mergedList = appsUsage
-          .where((usage) => usage.usage.inSeconds > 0) // filter zero-usage apps
+          .where((usage) => usage.usage.inSeconds > 0)
           .map((usage) {
             final installedApp = appInfoMap[usage.packageName];
             return CustomAppInfo(
