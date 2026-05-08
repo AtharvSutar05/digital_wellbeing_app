@@ -33,7 +33,12 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       };
 
       final mergedList = appsUsage
-          .where((usage) => usage.usage.inSeconds > 0)
+          .where((usage) {
+            final installedApp = appInfoMap[usage.packageName];
+
+            return usage.usage.inSeconds > 0 &&
+                installedApp?.isLaunchableApp == true;
+          })
           .map((usage) {
             final installedApp = appInfoMap[usage.packageName];
             return CustomAppInfo(
@@ -59,7 +64,8 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               .map(
                 (entry) => CategoryGroup(
                   category: entry.key,
-                  apps: entry.value..sort((a, b) => b.usage.compareTo(a.usage)),
+                  apps: [...entry.value]
+                    ..sort((a, b) => b.usage.compareTo(a.usage)),
                   totalUsage: entry.value.fold(
                     Duration.zero,
                     (sum, app) => sum + app.usage,
@@ -68,10 +74,6 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               )
               .toList()
             ..sort((a, b) => b.totalUsage.compareTo(a.totalUsage));
-
-      for (final group in categoryGroups) {
-        group.apps.removeWhere((app) => app.isLaunchable != true);
-      }
 
       emit(AppUsageLoaded(categoryGroupList: categoryGroups));
     } catch (e) {
