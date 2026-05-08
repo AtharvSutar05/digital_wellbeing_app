@@ -59,12 +59,47 @@ class HomePage extends StatelessWidget {
                         height: 300,
                         child: SfCircularChart(
                           margin: EdgeInsets.zero,
+                          annotations: <CircularChartAnnotation>[
+                            CircularChartAnnotation(
+                              widget: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    "Total Usage",
+                                    style: TextStyle(
+                                      color: Color(0xFF191C1C),
+                                      fontFamily: "Manrope",
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12,
+                                      height: 0,
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
+                                  Text(
+                                    AppConstants.formatDuration(totalUsage),
+                                    style: const TextStyle(
+                                      color: Color(0xFF191C1C),
+                                      fontFamily: "Manrope",
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 24,
+                                      height: 0,
+                                      letterSpacing: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           tooltipBehavior: TooltipBehavior(
                             enable: true,
                             builder: (dynamic data, _, _, _, _) {
                               final group = data as CategoryGroup;
                               return Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -124,7 +159,8 @@ class HomePage extends StatelessWidget {
                                 return '${percent.toStringAsFixed(0)}%';
                               },
                               enableTooltip: true,
-                              pointColorMapper: (CategoryGroup data, _) => AppCategoryTheme.color(data.category),
+                              pointColorMapper: (CategoryGroup data, _) =>
+                                  AppCategoryTheme.color(data.category),
                             ),
                           ],
                         ),
@@ -134,9 +170,8 @@ class HomePage extends StatelessWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: categoryGroupList.length,
-                        separatorBuilder: (_, index) => const SizedBox(
-                          height: 16,
-                        ),
+                        separatorBuilder: (_, index) =>
+                            const SizedBox(height: 16),
                         itemBuilder: (_, index) {
                           final category = categoryGroupList[index];
                           return Container(
@@ -162,18 +197,26 @@ class HomePage extends StatelessWidget {
                                     vertical: 10,
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
-                                          Icon(AppCategoryTheme.icon(category.category), size: 32,),
+                                          Icon(
+                                            AppCategoryTheme.icon(
+                                              category.category,
+                                            ),
+                                            size: 32,
+                                          ),
                                           const SizedBox(width: 8),
                                           Column(
                                             crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 category.category.displayName,
@@ -215,12 +258,10 @@ class HomePage extends StatelessWidget {
                                   ),
                                 ),
                                 ListView.separated(
-                                  shrinkWrap:
-                                      true,
+                                  shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   padding: EdgeInsets.symmetric(vertical: 16.0),
-                                  itemCount:
-                                      category.apps.length,
+                                  itemCount: category.apps.length,
                                   itemBuilder: (_, i) {
                                     final app = category.apps[i];
                                     return AppInfoCard(
