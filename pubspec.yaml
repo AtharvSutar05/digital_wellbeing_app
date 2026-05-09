@@ -13,7 +13,6 @@ dependencies:
   installed_apps: ^2.1.1
   percent_indicator: ^4.2.5
   flutter_bloc: ^9.1.1
-  app_usage: ^4.1.0
   equatable: ^2.0.8
   syncfusion_flutter_charts: ^33.2.5
 

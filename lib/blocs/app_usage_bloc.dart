@@ -1,9 +1,9 @@
-import 'package:app_usage/app_usage.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
 import 'package:wellbeing_app/models/app_info.dart';
+import 'package:wellbeing_app/models/app_usage_data.dart';
 import 'package:wellbeing_app/models/category_group.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
@@ -25,7 +25,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         _appUsageService.getUsageStats(),
         _appInfoService.getInstalledApps(),
       ]);
-      final appsUsage = result[0] as List<AppUsageInfo>;
+      final appsUsage = result[0] as List<AppUsageData>;
       final installedApps = result[1] as List<AppInfo>;
 
       final appInfoMap = <String, AppInfo>{
@@ -42,7 +42,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
           .map((usage) {
             final installedApp = appInfoMap[usage.packageName];
             return CustomAppInfo(
-              name: installedApp?.name ?? usage.appName,
+              name: installedApp?.name ?? usage.packageName,
               icon: installedApp?.icon,
               packageName: usage.packageName,
               usage: usage.usage,

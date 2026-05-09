@@ -37,17 +37,54 @@ class MainActivity: FlutterActivity() {
             val pkg = event.packageName
 
             // Logic: Catch the exact moments the app was used
-            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                startTimes[pkg] = event.timeStamp
-            } else if (event.eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
-                val start = startTimes[pkg]
-                if (start != null) {
-                    val duration = event.timeStamp - start
-                    statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
-                    startTimes.remove(pkg)
+            when (event.eventType) {
+
+                UsageEvents.Event.ACTIVITY_RESUMED,
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> {
+
+                    if (!startTimes.containsKey(pkg)) {
+                        startTimes[pkg] = event.timeStamp
+                    }
+                }
+
+                UsageEvents.Event.ACTIVITY_PAUSED,
+                UsageEvents.Event.MOVE_TO_BACKGROUND -> {
+
+                    val start = startTimes[pkg]
+
+                    if (start != null) {
+
+                        val duration = event.timeStamp - start
+
+                        if (duration > 0) {
+                            statsMap[pkg] =
+                                (statsMap[pkg] ?: 0L) + duration
+                        }
+
+                        startTimes.remove(pkg)
+                    }
                 }
             }
         }
+
+        for ((pkg, start) in startTimes) {
+
+            val duration = endTime - start
+
+            if (duration > 0) {
+                statsMap[pkg] =
+                    (statsMap[pkg] ?: 0L) + duration
+            }
+
+            if (pkg.isNullOrEmpty()) continue
+
+            if (
+                pkg == "com.android.systemui" ||
+                pkg.contains("launcher")
+            ) continue
+        }
+
+
         return statsMap
     }
 }

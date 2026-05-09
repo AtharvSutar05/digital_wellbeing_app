@@ -139,7 +139,7 @@ class HomePage extends StatelessWidget {
                               xValueMapper: (CategoryGroup data, _) =>
                                   data.category.displayName,
                               yValueMapper: (CategoryGroup data, _) =>
-                                  data.totalUsage.inMinutes,
+                                  data.totalUsage.inSeconds,
                               dataLabelSettings: DataLabelSettings(
                                 isVisible: true,
                                 labelPosition: ChartDataLabelPosition.outside,
@@ -153,8 +153,8 @@ class HomePage extends StatelessWidget {
                               ),
                               dataLabelMapper: (CategoryGroup data, _) {
                                 final percent =
-                                    (data.totalUsage.inMinutes /
-                                        totalUsage.inMinutes) *
+                                    (data.totalUsage.inSeconds /
+                                        totalUsage.inSeconds) *
                                     100;
                                 return '${percent.toStringAsFixed(0)}%';
                               },
