@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:wellbeing_app/utils/enums.dart';
 
 class CustomAppInfo {

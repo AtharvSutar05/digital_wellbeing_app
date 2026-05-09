@@ -10,7 +10,9 @@ class AppConstants {
   static String formatDuration(Duration d) {
     final hours = d.inHours;
     final minutes = d.inMinutes % 60;
+    final seconds = d.inSeconds % 60;
 
+    if(minutes == 0) return "${seconds}s";
     if (hours == 0) return "${minutes}m";
     return "${hours}h ${minutes}m";
   }

@@ -7,7 +7,7 @@ class AppInfoService {
       List<AppInfo> apps = await InstalledApps.getInstalledApps(
         excludeSystemApps: false,
         excludeNonLaunchableApps: true,
-        withIcon: true,
+        withIcon: false,
         // packageNamePrefix: "com.example",
         // platformType: PlatformType.flutter,
       );
