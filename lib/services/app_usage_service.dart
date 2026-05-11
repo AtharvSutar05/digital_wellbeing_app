@@ -37,8 +37,7 @@ class AppUsageService {
 
       return infoList;
     } on PlatformException catch (e) {
-      print("Failed to get native usage: ${e.message}");
-      rethrow;
+      throw Exception(e.message);
     }
   }
 }

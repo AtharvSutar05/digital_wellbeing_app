@@ -33,7 +33,7 @@ class CircularProgressIndicatorWidget extends StatelessWidget {
             ),
           ),
           Text(
-            AppConstants.formatDuration(totalUsage),
+            AppConstants.formatDuration(usage: totalUsage),
             style: const TextStyle(
               color: Color(0xFF191C1C),
               fontFamily: "Manrope",

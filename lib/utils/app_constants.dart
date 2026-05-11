@@ -7,16 +7,30 @@ class AppConstants {
   );
   static final int primary = 0xFF32645E;
   static final int secondary = 0xFF8EACC1;
-  static String formatDuration(Duration d) {
-    final hours = d.inHours;
-    final minutes = d.inMinutes % 60;
-    final seconds = d.inSeconds % 60;
+  static String formatDuration({
+    required Duration usage,
+    bool showSeconds = true,
+  }) {
+    final hours = usage.inHours;
+    final minutes = usage.inMinutes % 60;
+    final seconds = usage.inSeconds % 60;
 
-    if(minutes == 0) return "${seconds}s";
-    if (hours == 0) return "${minutes}m";
-    return "${hours}h ${minutes}m";
+    if (hours > 0) {
+      return "${hours}h ${minutes}m";
+    }
+
+    if (minutes > 0) {
+      return showSeconds
+          ? "${minutes}m ${seconds}s"
+          : "${minutes}m";
+    }
+
+    return showSeconds
+        ? "${seconds}s"
+        : "Less than a minute";
   }
+
   static double findPercentage(int goal, int totalUsage) {
-    return totalUsage/goal;
+    return totalUsage / goal;
   }
 }

@@ -56,7 +56,7 @@ class AppInfoCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      AppConstants.formatDuration(appInfo.usage),
+                      AppConstants.formatDuration(usage: appInfo.usage),
                       style: TextStyle(
                         color: Color(0xFF191C1C),
                         fontFamily: "Manrope",
@@ -71,8 +71,8 @@ class AppInfoCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: AppConstants.findPercentage(
-                    totalUsage.inMinutes,
-                    appInfo.usage.inMinutes,
+                    totalUsage.inSeconds,
+                    appInfo.usage.inSeconds,
                   ),
                   minHeight: 6,
                   color: Color(AppConstants.primary),

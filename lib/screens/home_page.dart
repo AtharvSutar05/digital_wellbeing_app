@@ -14,9 +14,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: BlocBuilder<AppUsageBloc, AppUsageState>(
+    return SafeArea(
+      child: Scaffold(
+        body: BlocBuilder<AppUsageBloc, AppUsageState>(
           builder: (context, state) {
             if (state is AppUsageLoading) {
               return Center(
@@ -77,7 +77,9 @@ class HomePage extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    AppConstants.formatDuration(totalUsage),
+                                    AppConstants.formatDuration(
+                                      usage: totalUsage,
+                                    ),
                                     style: const TextStyle(
                                       color: Color(0xFF191C1C),
                                       fontFamily: "Manrope",
@@ -104,7 +106,7 @@ class HomePage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  "${group.category.displayName} : ${AppConstants.formatDuration(group.totalUsage)}",
+                                  "${group.category.displayName} : ${AppConstants.formatDuration(usage: group.totalUsage)}",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontFamily: "Manrope",
@@ -231,7 +233,8 @@ class HomePage extends StatelessWidget {
                                               ),
                                               Text(
                                                 AppConstants.formatDuration(
-                                                  category.totalUsage,
+                                                  usage: category.totalUsage,
+                                                  showSeconds: false,
                                                 ),
                                                 style: const TextStyle(
                                                   color: Color(0xFF191C1C),
