@@ -32,6 +32,9 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         for (final app in installedApps) app.packageName: app,
       };
 
+      // don't forgot to remove wellbeing application
+      appInfoMap.remove("com.example.wellbeing_app");
+
       final mergedList = appsUsage
           .where((usage) {
             final installedApp = appInfoMap[usage.packageName];
