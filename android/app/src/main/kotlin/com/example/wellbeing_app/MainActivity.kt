@@ -26,64 +26,60 @@ class MainActivity: FlutterActivity() {
     }
 
     private fun calculateUsage(startTime: Long, endTime: Long): Map<String, Long> {
-        val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val usm =
+            getSystemService(Context.USAGE_STATS_SERVICE)
+                    as UsageStatsManager
+
         val events = usm.queryEvents(startTime, endTime)
+
         val statsMap = mutableMapOf<String, Long>()
-        val startTimes = mutableMapOf<String, Long>()
+
+        var currentPackage: String? = null
+        var currentStartTime = 0L
 
         val event = UsageEvents.Event()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            val pkg = event.packageName
 
-            // Logic: Catch the exact moments the app was used
+        while (events.hasNextEvent()) {
+
+            events.getNextEvent(event)
+
+            val pkg = event.packageName ?: continue
+
             when (event.eventType) {
 
                 UsageEvents.Event.ACTIVITY_RESUMED,
                 UsageEvents.Event.MOVE_TO_FOREGROUND -> {
 
-                    if (!startTimes.containsKey(pkg)) {
-                        startTimes[pkg] = event.timeStamp
-                    }
-                }
+                    // close previous app session
+                    if (currentPackage != null) {
 
-                UsageEvents.Event.ACTIVITY_PAUSED,
-                UsageEvents.Event.MOVE_TO_BACKGROUND -> {
-
-                    val start = startTimes[pkg]
-
-                    if (start != null) {
-
-                        val duration = event.timeStamp - start
+                        val duration =
+                            event.timeStamp - currentStartTime
 
                         if (duration > 0) {
-                            statsMap[pkg] =
-                                (statsMap[pkg] ?: 0L) + duration
+                            statsMap[currentPackage!!] =
+                                (statsMap[currentPackage!!] ?: 0L) + duration
                         }
-
-                        startTimes.remove(pkg)
                     }
+
+                    // start new session
+                    currentPackage = pkg
+                    currentStartTime = event.timeStamp
                 }
             }
         }
 
-        for ((pkg, start) in startTimes) {
+        // close final open app
+        if (currentPackage != null) {
 
-            val duration = endTime - start
+            val duration = endTime - currentStartTime
 
             if (duration > 0) {
-                statsMap[pkg] =
-                    (statsMap[pkg] ?: 0L) + duration
+                statsMap[currentPackage!!] =
+                    (statsMap[currentPackage!!] ?: 0L) + duration
             }
-
-            if (pkg.isNullOrEmpty()) continue
-
-            if (
-                pkg == "com.android.systemui" ||
-                pkg.contains("launcher")
-            ) continue
         }
-
 
         return statsMap
     }
