@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:wellbeing_app/models/app_info.dart';
+import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 
 class AppInfoCard extends StatelessWidget {
@@ -14,7 +17,7 @@ class AppInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Container(
@@ -24,17 +27,9 @@ class AppInfoCard extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: appInfo.icon != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      appInfo.icon!, // your Uint8List variable here
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.broken_image, size: 24),
-                    ),
-                  )
-                : null,
+            child: AppIconWidget(
+              packageName: appInfo.packageName,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -46,7 +41,7 @@ class AppInfoCard extends StatelessWidget {
                   children: [
                     Text(
                       appInfo.name,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF191C1C),
                         fontFamily: "Manrope",
                         fontWeight: FontWeight.w600,
@@ -57,7 +52,7 @@ class AppInfoCard extends StatelessWidget {
                     ),
                     Text(
                       AppConstants.formatDuration(usage: appInfo.usage),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF191C1C),
                         fontFamily: "Manrope",
                         fontWeight: FontWeight.w600,
@@ -77,13 +72,53 @@ class AppInfoCard extends StatelessWidget {
                   minHeight: 6,
                   color: Color(AppConstants.primary),
                   borderRadius: BorderRadius.circular(6),
-                  backgroundColor: Color(0xFFE1E3E2),
+                  backgroundColor: const Color(0xFFE1E3E2),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class AppIconWidget extends StatelessWidget {
+  final String packageName;
+
+  const AppIconWidget({
+    super.key,
+    required this.packageName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: AppInfoService().getAppIcon(packageName),
+
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const Icon(Icons.broken_image);
+        }
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            color: const Color(0xFFE1E3E2),
+            child: const Icon(Icons.apps),
+          ),
+        );
+      },
     );
   }
 }

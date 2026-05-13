@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
@@ -12,6 +13,12 @@ import 'package:wellbeing_app/utils/enums.dart';
 class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   final AppUsageService _appUsageService = AppUsageService();
   final AppInfoService _appInfoService = AppInfoService();
+  final ignoredPackages = {
+    'com.android.systemui',
+    'com.miui.home',
+    'com.google.android.inputmethod.latin',
+    'com.android.settings',
+  };
   AppUsageBloc() : super(AppUsageInitial()) {
     on<LoadAppsUsage>(onLoadAppsUsage);
   }
@@ -40,13 +47,13 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
             final installedApp = appInfoMap[usage.packageName];
 
             return usage.usage.inSeconds > 0 &&
-                installedApp?.isLaunchableApp == true;
+                installedApp?.isLaunchableApp == true &&
+                !ignoredPackages.contains(usage.packageName);
           })
           .map((usage) {
             final installedApp = appInfoMap[usage.packageName];
             return CustomAppInfo(
               name: installedApp?.name ?? usage.packageName,
-              icon: installedApp?.icon,
               packageName: usage.packageName,
               usage: usage.usage,
               category: appCategoryConverter(
@@ -77,6 +84,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               )
               .toList()
             ..sort((a, b) => b.totalUsage.compareTo(a.totalUsage));
+      debugPrint(categoryGroups[0].apps[0].packageName);
 
       emit(AppUsageLoaded(categoryGroupList: categoryGroups));
     } catch (e) {
@@ -84,3 +92,5 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     }
   }
 }
+
+
