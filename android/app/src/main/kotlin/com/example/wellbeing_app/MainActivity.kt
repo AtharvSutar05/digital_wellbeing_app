@@ -34,9 +34,9 @@ class MainActivity: FlutterActivity() {
         val events = usm.queryEvents(startTime, endTime)
 
         val statsMap = mutableMapOf<String, Long>()
-
-        var currentPackage: String? = null
-        var currentStartTime = 0L
+        
+        // Track when each package comes to the foreground
+        val startTimes = mutableMapOf<String, Long>()
 
         val event = UsageEvents.Event()
 
@@ -46,38 +46,36 @@ class MainActivity: FlutterActivity() {
 
             val pkg = event.packageName ?: continue
 
-            when (event.eventType) {
+            val eventType = event.eventType
 
-                UsageEvents.Event.ACTIVITY_RESUMED,
-                UsageEvents.Event.MOVE_TO_FOREGROUND -> {
-
-                    // close previous app session
-                    if (currentPackage != null) {
-
-                        val duration =
-                            event.timeStamp - currentStartTime
-
-                        if (duration > 0) {
-                            statsMap[currentPackage!!] =
-                                (statsMap[currentPackage!!] ?: 0L) + duration
-                        }
+            if (eventType == UsageEvents.Event.ACTIVITY_RESUMED || 
+                eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                
+                // Record start time if not already recorded
+                if (!startTimes.containsKey(pkg)) {
+                    startTimes[pkg] = event.timeStamp
+                }
+                
+            } else if (eventType == UsageEvents.Event.ACTIVITY_PAUSED || 
+                       eventType == UsageEvents.Event.ACTIVITY_STOPPED || 
+                       eventType == UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                
+                // Close the session and calculate duration
+                if (startTimes.containsKey(pkg)) {
+                    val appStartTime = startTimes.remove(pkg)!!
+                    val duration = event.timeStamp - appStartTime
+                    if (duration > 0) {
+                        statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
                     }
-
-                    // start new session
-                    currentPackage = pkg
-                    currentStartTime = event.timeStamp
                 }
             }
         }
 
-        // close final open app
-        if (currentPackage != null) {
-
-            val duration = endTime - currentStartTime
-
+        // Close any sessions that are still active at endTime
+        for ((pkg, appStartTime) in startTimes) {
+            val duration = endTime - appStartTime
             if (duration > 0) {
-                statsMap[currentPackage!!] =
-                    (statsMap[currentPackage!!] ?: 0L) + duration
+                statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
             }
         }
 

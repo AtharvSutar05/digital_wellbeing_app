@@ -3,8 +3,7 @@ import 'package:installed_apps/app_info.dart';
 import 'package:installed_apps/installed_apps.dart';
 
 class AppInfoService {
-  static final AppInfoService _instance =
-  AppInfoService._internal();
+  static final AppInfoService _instance = AppInfoService._internal();
 
   factory AppInfoService() => _instance;
 

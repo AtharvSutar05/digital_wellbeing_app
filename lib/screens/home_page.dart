@@ -31,7 +31,7 @@ class HomePage extends StatelessWidget {
               return Center(
                 child: Text(
                   state.message,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(0xFF404847),
                     fontFamily: "Manrope",
                     fontWeight: FontWeight.w400,
