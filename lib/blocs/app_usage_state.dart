@@ -7,8 +7,6 @@ abstract class AppUsageState extends Equatable {
   List<Object?> get props => [];
 }
 
-class AppUsageInitial extends AppUsageState {}
-
 class AppUsageLoading extends AppUsageState {}
 
 class AppUsageLoaded extends AppUsageState {

@@ -20,22 +20,18 @@ class HomePage extends StatelessWidget {
       child: Scaffold(
         body: BlocBuilder<AppUsageBloc, AppUsageState>(
           builder: (context, state) {
-            if (state is AppUsageLoading) {
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Color(AppConstants.primary),
-                ),
-              );
-            }
             if (state is AppUsageError) {
-              return Center(
-                child: Text(
-                  state.message,
-                  style: const TextStyle(
-                    color: Color(0xFF404847),
-                    fontFamily: "Manrope",
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Center(
+                  child: Text(
+                    state.message,
+                    style: const TextStyle(
+                      color: Color(0xFF404847),
+                      fontFamily: "Manrope",
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               );
@@ -49,6 +45,9 @@ class HomePage extends StatelessWidget {
                 (sum, group) => sum + group.totalUsage,
               );
 
+              if (totalUsage.inSeconds == 0) {
+                return buildUserGuideMessage();
+              }
               return isLandscape
                   ? landscapeLayout(
                       totalUsage: totalUsage,
@@ -59,7 +58,11 @@ class HomePage extends StatelessWidget {
                       categoryGroupList: categoryGroupList,
                     );
             }
-            return const SizedBox.shrink();
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(AppConstants.primary),
+              ),
+            );
           },
         ),
       ),
@@ -193,10 +196,8 @@ class HomePage extends StatelessWidget {
           DoughnutSeries<CategoryGroup, String>(
             radius: '80%',
             dataSource: categoryGroupList,
-            xValueMapper: (CategoryGroup data, _) =>
-                data.category.displayName,
-            yValueMapper: (CategoryGroup data, _) =>
-                data.totalUsage.inSeconds,
+            xValueMapper: (CategoryGroup data, _) => data.category.displayName,
+            yValueMapper: (CategoryGroup data, _) => data.totalUsage.inSeconds,
             dataLabelSettings: DataLabelSettings(
               isVisible: true,
               labelPosition: ChartDataLabelPosition.outside,
@@ -329,6 +330,74 @@ class HomePage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget buildUserGuideMessage() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.bar_chart_rounded,
+              size: 64,
+              color: Color(AppConstants.primary).withAlpha(80),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "No Usage Data Found",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF191C1C),
+                fontFamily: "Manrope",
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "To see your app usage, please ensure you have enabled Usage Access for this app.\n\nGo to Settings → Digital Wellbeing (or Special App Access) → Usage Access → Enable for this app.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF404847),
+                fontFamily: "Manrope",
+                fontWeight: FontWeight.w400,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                // Open usage access settings
+                // openUsageAccessSettings();
+              },
+              icon: const Icon(Icons.settings_rounded, size: 18),
+              label: const Text(
+                "Open Settings",
+                style: TextStyle(
+                  fontFamily: "Manrope",
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(AppConstants.primary),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

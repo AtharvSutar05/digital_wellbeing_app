@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/screens/home_page.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'models/app_meta_data_model.dart';
 
-void main() {
+void main() async {
+  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+  await Hive.initFlutter();
+  Hive.registerAdapter(AppMetaDataModelAdapter());
+
   runApp(
     MultiBlocProvider(
       providers: [
@@ -24,6 +31,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppConstants.themeData,
+      builder: (context, child) {
+        return Container(
+          color: Colors.white,
+          child: child,
+        );
+      },
       home: const HomePage(),
     );
   }
