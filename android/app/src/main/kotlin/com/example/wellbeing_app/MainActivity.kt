@@ -31,7 +31,9 @@ class MainActivity: FlutterActivity() {
             getSystemService(Context.USAGE_STATS_SERVICE)
                     as UsageStatsManager
 
-        val events = usm.queryEvents(startTime, endTime)
+        // Query events from 1 day before to catch sessions started before startTime
+        val queryStartTime = maxOf(0L, startTime - (24L * 60 * 60 * 1000))
+        val events = usm.queryEvents(queryStartTime, endTime)
 
         val statsMap = mutableMapOf<String, Long>()
         
@@ -63,8 +65,13 @@ class MainActivity: FlutterActivity() {
                 // Close the session and calculate duration
                 if (startTimes.containsKey(pkg)) {
                     val appStartTime = startTimes.remove(pkg)!!
-                    val duration = event.timeStamp - appStartTime
-                    if (duration > 0) {
+                    val appEndTime = event.timeStamp
+                    
+                    val overlapStart = maxOf(appStartTime, startTime)
+                    val overlapEnd = minOf(appEndTime, endTime)
+                    
+                    if (overlapStart < overlapEnd) {
+                        val duration = overlapEnd - overlapStart
                         statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
                     }
                 }
@@ -73,8 +80,10 @@ class MainActivity: FlutterActivity() {
 
         // Close any sessions that are still active at endTime
         for ((pkg, appStartTime) in startTimes) {
-            val duration = endTime - appStartTime
-            if (duration > 0) {
+            val overlapStart = maxOf(appStartTime, startTime)
+            val overlapEnd = endTime
+            if (overlapStart < overlapEnd) {
+                val duration = overlapEnd - overlapStart
                 statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
             }
         }

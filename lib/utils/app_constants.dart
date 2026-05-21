@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 class AppConstants {
   static final ThemeData themeData = ThemeData.light().copyWith(
     scaffoldBackgroundColor: Colors.white,
+    splashColor: Colors.transparent,
+    highlightColor: Colors.transparent,
   );
-  static final int primary = 0xFF32645E;
-  static final int secondary = 0xFF8EACC1;
+  static const int primary = 0xFF32645E;
+  static const int secondary = 0xFF8EACC1;
   static String formatDuration({
     required Duration usage,
     bool showSeconds = true,

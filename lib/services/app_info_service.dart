@@ -21,6 +21,15 @@ class AppInfoService {
     return apps;
   }
 
+  Future<List<AppInfo>> getMissingAppInfoList(List<String> missingApps) async {
+    List<AppInfo> missingAppInfoList = [];
+    for(var packageName in missingApps) {
+      final appInfo = await InstalledApps.getAppInfo(packageName);
+      missingAppInfoList.add(appInfo!);
+    }
+    return missingAppInfoList;
+  }
+
   Future<Uint8List?> getAppIcon(String packageName) {
     return _iconCache.putIfAbsent(packageName, () async {
       final appInfo = await InstalledApps.getAppInfo(packageName);
