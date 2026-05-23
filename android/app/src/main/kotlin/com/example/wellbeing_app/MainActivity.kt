@@ -36,7 +36,7 @@ class MainActivity: FlutterActivity() {
         val events = usm.queryEvents(queryStartTime, endTime)
 
         val statsMap = mutableMapOf<String, Long>()
-        
+
         // Track when each package comes to the foreground
         val startTimes = mutableMapOf<String, Long>()
 
@@ -50,26 +50,26 @@ class MainActivity: FlutterActivity() {
 
             val eventType = event.eventType
 
-            if (eventType == UsageEvents.Event.ACTIVITY_RESUMED || 
+            if (eventType == UsageEvents.Event.ACTIVITY_RESUMED ||
                 eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                
+
                 // Record start time if not already recorded
                 if (!startTimes.containsKey(pkg)) {
                     startTimes[pkg] = event.timeStamp
                 }
-                
-            } else if (eventType == UsageEvents.Event.ACTIVITY_PAUSED || 
-                       eventType == UsageEvents.Event.ACTIVITY_STOPPED || 
-                       eventType == UsageEvents.Event.MOVE_TO_BACKGROUND) {
-                
+
+            } else if (eventType == UsageEvents.Event.ACTIVITY_PAUSED ||
+                eventType == UsageEvents.Event.ACTIVITY_STOPPED ||
+                eventType == UsageEvents.Event.MOVE_TO_BACKGROUND) {
+
                 // Close the session and calculate duration
                 if (startTimes.containsKey(pkg)) {
                     val appStartTime = startTimes.remove(pkg)!!
                     val appEndTime = event.timeStamp
-                    
+
                     val overlapStart = maxOf(appStartTime, startTime)
                     val overlapEnd = minOf(appEndTime, endTime)
-                    
+
                     if (overlapStart < overlapEnd) {
                         val duration = overlapEnd - overlapStart
                         statsMap[pkg] = (statsMap[pkg] ?: 0L) + duration
@@ -91,3 +91,4 @@ class MainActivity: FlutterActivity() {
         return statsMap
     }
 }
+

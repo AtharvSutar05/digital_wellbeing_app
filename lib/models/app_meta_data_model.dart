@@ -11,23 +11,31 @@ class AppMetaDataModel extends HiveObject {
   final String name;
 
   @HiveField(2)
-  final int categoryIndex; // store enum as int
+  final DateTime lastSynced;
 
   @HiveField(3)
-  final int? customCategoryIndex;
+  final int? categoryIndex;
 
   @HiveField(4)
-  final bool? isLaunchable;
+  final int? dailyLimit;
 
   @HiveField(5)
-  final DateTime lastSynced;
+  final bool? isBlocked;
+
+  @HiveField(6)
+  final bool? isLaunchable;
+
+  @HiveField(7)
+  final bool? isTracked;
 
   AppMetaDataModel({
     required this.packageName,
     required this.name,
-    required this.categoryIndex,
-    this.customCategoryIndex,
-    this.isLaunchable,
     required this.lastSynced,
+    this.categoryIndex,
+    this.dailyLimit,
+    this.isBlocked,
+    this.isLaunchable,
+    this.isTracked,
   });
 }

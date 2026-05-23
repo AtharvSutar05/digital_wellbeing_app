@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:wellbeing_app/models/category_group.dart';
+import 'package:wellbeing_app/models/custom_app_info.dart';
 
 abstract class AppUsageState extends Equatable {
   const AppUsageState();
@@ -10,12 +10,12 @@ abstract class AppUsageState extends Equatable {
 class AppUsageLoading extends AppUsageState {}
 
 class AppUsageLoaded extends AppUsageState {
-  final List<CategoryGroup> categoryGroupList;
+  final List<CustomAppInfo> appInfoList;
 
-  const AppUsageLoaded({required this.categoryGroupList});
+  const AppUsageLoaded({required this.appInfoList});
 
   @override
-  List<Object?> get props => [categoryGroupList];
+  List<Object?> get props => [appInfoList];
 }
 
 class AppUsageError extends AppUsageState {

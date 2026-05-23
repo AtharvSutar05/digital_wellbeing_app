@@ -21,13 +21,13 @@ class AppInfoService {
     return apps;
   }
 
-  Future<List<AppInfo>> getMissingAppInfoList(List<String> missingApps) async {
-    List<AppInfo> missingAppInfoList = [];
-    for(var packageName in missingApps) {
+  Future<List<AppInfo>> getAppInfoList(List<String> packageNames) async {
+    List<AppInfo> appInfoList = [];
+    for(final packageName in packageNames) {
       final appInfo = await InstalledApps.getAppInfo(packageName);
-      missingAppInfoList.add(appInfo!);
+      if(appInfo != null) appInfoList.add(appInfo);
     }
-    return missingAppInfoList;
+    return appInfoList;
   }
 
   Future<Uint8List?> getAppIcon(String packageName) {

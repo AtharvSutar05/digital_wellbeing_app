@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/screens/home_page.dart';
+import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'models/app_meta_data_model.dart';
@@ -12,7 +13,8 @@ void main() async {
   FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
   await Hive.initFlutter();
   Hive.registerAdapter(AppMetaDataModelAdapter());
-
+  final AppMetaDataCacheService appMetaDataCacheService = AppMetaDataCacheService();
+  await appMetaDataCacheService.init();
   runApp(
     MultiBlocProvider(
       providers: [
