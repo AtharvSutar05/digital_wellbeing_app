@@ -38,4 +38,27 @@ class AppMetaDataModel extends HiveObject {
     this.isLaunchable,
     this.isTracked,
   });
+
+  AppMetaDataModel copyWith({
+    String? packageName,
+    String? name,
+    DateTime? lastSynced,
+    int? categoryIndex,
+    int? dailyLimit,
+    bool? isBlocked,
+    bool? isLaunchable,
+    bool? isTracked,
+    bool clearDailyLimit = false,
+  }) {
+    return AppMetaDataModel(
+      packageName: packageName ?? this.packageName,
+      name: name ?? this.name,
+      lastSynced: lastSynced ?? this.lastSynced,
+      categoryIndex: categoryIndex ?? this.categoryIndex,
+      dailyLimit: clearDailyLimit ? null : dailyLimit ?? this.dailyLimit,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isLaunchable: isLaunchable ?? this.isLaunchable,
+      isTracked: isTracked ?? this.isTracked,
+    );
+  }
 }

@@ -4,7 +4,6 @@ import 'package:wellbeing_app/blocs/app_usage_state.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
 import 'package:wellbeing_app/models/app_usage_data.dart';
-import 'package:wellbeing_app/models/category_group.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
@@ -25,6 +24,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   AppUsageBloc() : super(AppUsageLoading()) {
     on<LoadAppsUsage>(onLoadAppsUsage);
     on<UpdateCategory>(onUpdateCategory);
+    on<UpdateDailyLimit>(onUpdateDailyLimit);
   }
 
   Future<void> onLoadAppsUsage(
@@ -47,7 +47,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       // empty local storage
       if (appInfoMap == null) {
         final packageNames = appsUsage.map((e) => e.packageName).toList();
-        final  appInfoList = await _appInfoService.getAppInfoList(packageNames);
+        final appInfoList = await _appInfoService.getAppInfoList(packageNames);
         await _appMetaDataCacheService.saveAll(appInfoList);
         appInfoMap = await _appMetaDataCacheService.loadAll() ?? {};
       }
@@ -58,7 +58,9 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
           .toList();
 
       if (missingPackageNames.isNotEmpty) {
-        final missingAppInfoList = await _appInfoService.getAppInfoList(missingPackageNames);
+        final missingAppInfoList = await _appInfoService.getAppInfoList(
+          missingPackageNames,
+        );
         await _appMetaDataCacheService.saveAll(missingAppInfoList);
         final now = DateTime.now();
         final missingAppMap = {
@@ -77,7 +79,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       appInfoMap.remove("com.example.wellbeing_app");
       emit(
         AppUsageLoaded(
-          appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap)
+          appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap),
         ),
       );
     } catch (e) {
@@ -91,27 +93,31 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     List<AppUsageData> appsUsage,
     Map<String, AppMetaDataModel> appInfoMap,
   ) {
-    final customAppInfoList = appsUsage
-        .where((usage) {
-          final app = appInfoMap[usage.packageName];
-          return usage.usage.inSeconds > 0 &&
-              app?.isLaunchable == true &&
-              !ignoredPackages.contains(usage.packageName);
-        })
-        .map((usage) {
-          final app = appInfoMap[usage.packageName];
-          return CustomAppInfo(
-            name: app?.name ?? usage.packageName,
-            packageName: usage.packageName,
-            usage: usage.usage,
-            category: appCategoryConverter(
-              categoryInt: app?.categoryIndex,
-              packageName: usage.packageName,
-            ),
-            isLaunchable: app?.isLaunchable,
-          );
-        })
-        .toList();
+    final customAppInfoList =
+        appsUsage
+            .where((usage) {
+              final app = appInfoMap[usage.packageName];
+              return usage.usage.inSeconds > 0 &&
+                  app?.isLaunchable == true &&
+                  !ignoredPackages.contains(usage.packageName);
+            })
+            .map((usage) {
+              final app = appInfoMap[usage.packageName];
+              return CustomAppInfo(
+                packageName: usage.packageName,
+                name: app?.name ?? usage.packageName,
+                usage: usage.usage,
+                category: appCategoryConverter(
+                  categoryInt: app?.categoryIndex,
+                  packageName: usage.packageName,
+                ),
+                dailyLimit: app?.dailyLimit,
+                isBlocked: app?.isBlocked,
+                isLaunchable: app?.isLaunchable,
+              );
+            })
+            .toList()
+          ..sort((a, b) => b.usage.compareTo(a.usage));
 
     return customAppInfoList;
   }
@@ -127,4 +133,14 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     add(LoadAppsUsage());
   }
 
+  Future<void> onUpdateDailyLimit(
+    UpdateDailyLimit event,
+    Emitter<AppUsageState> emit,
+  ) async {
+    await _appMetaDataCacheService.updateDailyLimit(
+      packageName: event.packageName,
+      dailyLimit: event.dailyLimit,
+    );
+    add(LoadAppsUsage());
+  }
 }

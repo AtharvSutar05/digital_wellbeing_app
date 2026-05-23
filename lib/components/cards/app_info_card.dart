@@ -1,8 +1,14 @@
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
+import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
+
+import '../dialogs/set_app_daily_limit_dialog.dart';
 
 class AppInfoCard extends StatelessWidget {
   final Duration totalUsage;
@@ -65,7 +71,42 @@ class AppInfoCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Icon(Icons.hourglass_top_rounded, size: 20, color: Color(0xFF191C1C),),
+          InkWell(
+            onTap: () {
+              showSetAppTimerDialog(
+                context: context,
+                appName: appInfo.name,
+                initialHours: 0,
+                initialMinutes: 30,
+                dailyLimit: appInfo.dailyLimit,
+                onConfirm: (totalMinutes) {
+                  context.read<AppUsageBloc>().add(
+                    UpdateDailyLimit(
+                      packageName: appInfo.packageName,
+                      dailyLimit: totalMinutes,
+                    ),
+                  );
+                },
+                onDeleteTimer: () {
+                  context.read<AppUsageBloc>().add(
+                    UpdateDailyLimit(
+                      packageName: appInfo.packageName,
+                      dailyLimit: null,
+                    ),
+                  );
+                }
+              );
+            },
+            child: Icon(
+              appInfo.dailyLimit == null
+                  ? Icons.hourglass_empty_rounded
+                  : appInfo.usage.inMinutes < appInfo.dailyLimit!
+                  ? Icons.hourglass_top_rounded
+                  : Icons.hourglass_bottom_rounded,
+              size: 20,
+              color: Color(0xFF191C1C),
+            ),
+          ),
         ],
       ),
     );
