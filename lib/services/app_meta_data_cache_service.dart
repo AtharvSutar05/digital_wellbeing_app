@@ -45,14 +45,11 @@ class AppMetaDataCacheService {
     required int categoryIndex,
   }) async {
     final existing = _box.get(packageName);
-    final now = DateTime.now();
     if (existing != null) {
       await _box.put(
         packageName,
-        AppMetaDataModel(
-          packageName: existing.packageName,
-          name: existing.name,
-          lastSynced: now,
+        existing.copyWith(
+          lastSynced: DateTime.now(),
           categoryIndex: categoryIndex,
         ),
       );
@@ -61,18 +58,16 @@ class AppMetaDataCacheService {
 
   Future<void> updateDailyLimit({
     required String packageName,
-    required int dailyLimit,
+    required int? dailyLimit,
   }) async {
     final existing = _box.get(packageName);
-    final now = DateTime.now();
     if (existing != null) {
       _box.put(
         packageName,
-        AppMetaDataModel(
-          packageName: existing.packageName,
-          name: existing.name,
-          lastSynced: now,
+        existing.copyWith(
+          lastSynced: DateTime.now(),
           dailyLimit: dailyLimit,
+          clearDailyLimit: dailyLimit == null,
         ),
       );
     }
@@ -83,14 +78,11 @@ class AppMetaDataCacheService {
     required bool isTracking,
   }) async {
     final existing = _box.get(packageName);
-    final now = DateTime.now();
     if (existing != null) {
       _box.put(
         packageName,
-        AppMetaDataModel(
-          packageName: existing.packageName,
-          name: existing.name,
-          lastSynced: now,
+        existing.copyWith(
+          lastSynced: DateTime.now(),
           isTracked: isTracking,
         ),
       );

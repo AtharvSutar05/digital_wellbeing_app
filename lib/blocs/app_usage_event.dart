@@ -21,7 +21,7 @@ class UpdateCategory extends AppUsageEvent {
 
 class UpdateDailyLimit extends AppUsageEvent {
   final String packageName;
-  final Duration dailyLimit;
+  final int? dailyLimit;
 
   const UpdateDailyLimit({required this.packageName, required this.dailyLimit});
 
@@ -34,7 +34,6 @@ class UpdateTracking extends AppUsageEvent {
   final bool isTracking;
 
   const UpdateTracking({required this.packageName, required this.isTracking});
-
 
   @override
   List<Object?> get props => [packageName, isTracking];
