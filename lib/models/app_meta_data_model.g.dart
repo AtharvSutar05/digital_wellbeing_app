@@ -19,29 +19,35 @@ class AppMetaDataModelAdapter extends TypeAdapter<AppMetaDataModel> {
     return AppMetaDataModel(
       packageName: fields[0] as String,
       name: fields[1] as String,
-      categoryIndex: fields[2] as int,
-      customCategoryIndex: fields[3] as int?,
-      isLaunchable: fields[4] as bool?,
-      lastSynced: fields[5] as DateTime,
+      lastSynced: fields[2] as DateTime,
+      categoryIndex: fields[3] as int?,
+      dailyLimit: fields[4] as int?,
+      isBlocked: fields[5] as bool?,
+      isLaunchable: fields[6] as bool?,
+      isTracked: fields[7] as bool?,
     );
   }
 
   @override
   void write(BinaryWriter writer, AppMetaDataModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.packageName)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
-      ..write(obj.categoryIndex)
+      ..write(obj.lastSynced)
       ..writeByte(3)
-      ..write(obj.customCategoryIndex)
+      ..write(obj.categoryIndex)
       ..writeByte(4)
-      ..write(obj.isLaunchable)
+      ..write(obj.dailyLimit)
       ..writeByte(5)
-      ..write(obj.lastSynced);
+      ..write(obj.isBlocked)
+      ..writeByte(6)
+      ..write(obj.isLaunchable)
+      ..writeByte(7)
+      ..write(obj.isTracked);
   }
 
   @override

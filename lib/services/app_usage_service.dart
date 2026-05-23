@@ -28,9 +28,6 @@ class AppUsageService {
           AppUsageData(
             packageName: packageName.toString(),
             usage: usage,
-            start: startOfDay,
-            end: endOfDay,
-            lastForeground: now,
           ),
         );
       });

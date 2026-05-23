@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
-import 'package:wellbeing_app/models/app_info.dart';
+import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
 import 'package:wellbeing_app/models/app_usage_data.dart';
 import 'package:wellbeing_app/models/category_group.dart';
@@ -24,6 +24,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
 
   AppUsageBloc() : super(AppUsageLoading()) {
     on<LoadAppsUsage>(onLoadAppsUsage);
+    on<UpdateCategory>(onUpdateCategory);
   }
 
   Future<void> onLoadAppsUsage(
@@ -33,7 +34,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     try {
       emit(AppUsageLoading());
 
-      // Run usage stats and cache load in parallel
+      //fetching usage state and local storage
       final results = await Future.wait([
         _appUsageService.getUsageStats(),
         _appMetaDataCacheService.loadAll(),
@@ -43,20 +44,21 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       Map<String, AppMetaDataModel>? appInfoMap =
           results[1] as Map<String, AppMetaDataModel>?;
 
-      // Slow path — only on first launch or stale cache
+      // empty local storage
       if (appInfoMap == null) {
-        final installedApps = await _appInfoService.getInstalledApps();
-        await _appMetaDataCacheService.saveAll(installedApps);
+        final packageNames = appsUsage.map((e) => e.packageName).toList();
+        final  appInfoList = await _appInfoService.getAppInfoList(packageNames);
+        await _appMetaDataCacheService.saveAll(appInfoList);
         appInfoMap = await _appMetaDataCacheService.loadAll() ?? {};
       }
 
-      final missingPackages = appsUsage
+      final missingPackageNames = appsUsage
           .where((usage) => !appInfoMap!.containsKey(usage.packageName))
           .map((usage) => usage.packageName)
           .toList();
 
-      if(missingPackages.isNotEmpty) {
-        final missingAppInfoList = await _appInfoService.getMissingAppInfoList(missingPackages);
+      if (missingPackageNames.isNotEmpty) {
+        final missingAppInfoList = await _appInfoService.getAppInfoList(missingPackageNames);
         await _appMetaDataCacheService.saveAll(missingAppInfoList);
         final now = DateTime.now();
         final missingAppMap = {
@@ -75,7 +77,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       appInfoMap.remove("com.example.wellbeing_app");
       emit(
         AppUsageLoaded(
-          categoryGroupList: _buildCategoryGroups(appsUsage, appInfoMap),
+          appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap)
         ),
       );
     } catch (e) {
@@ -85,12 +87,11 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     }
   }
 
-  // 👇 extracted — single source of truth
-  List<CategoryGroup> _buildCategoryGroups(
+  List<CustomAppInfo> makeCustomAppInfoList(
     List<AppUsageData> appsUsage,
     Map<String, AppMetaDataModel> appInfoMap,
   ) {
-    final mergedList = appsUsage
+    final customAppInfoList = appsUsage
         .where((usage) {
           final app = appInfoMap[usage.packageName];
           return usage.usage.inSeconds > 0 &&
@@ -112,23 +113,18 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         })
         .toList();
 
-    final grouped = <AppCategory, List<CustomAppInfo>>{};
-    for (final app in mergedList) {
-      grouped.putIfAbsent(app.category, () => []).add(app);
-    }
-
-    return grouped.entries
-        .map(
-          (entry) => CategoryGroup(
-            category: entry.key,
-            apps: [...entry.value]..sort((a, b) => b.usage.compareTo(a.usage)),
-            totalUsage: entry.value.fold(
-              Duration.zero,
-              (sum, app) => sum + app.usage,
-            ),
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.totalUsage.compareTo(a.totalUsage));
+    return customAppInfoList;
   }
+
+  Future<void> onUpdateCategory(
+    UpdateCategory event,
+    Emitter<AppUsageState> emit,
+  ) async {
+    await _appMetaDataCacheService.updateCategory(
+      packageName: event.packageName,
+      categoryIndex: event.category.index,
+    );
+    add(LoadAppsUsage());
+  }
+
 }

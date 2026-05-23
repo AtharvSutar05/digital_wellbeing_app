@@ -1,4 +1,4 @@
-import 'package:wellbeing_app/models/app_info.dart';
+import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/utils/enums.dart';
 
 class CategoryGroup {
