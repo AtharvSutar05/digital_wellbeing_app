@@ -49,8 +49,6 @@ class AppMetaDataCacheService {
       await _box.put(
         packageName,
         existing.copyWith(
-          packageName: existing.packageName,
-          name: existing.name,
           lastSynced: DateTime.now(),
           categoryIndex: categoryIndex,
         ),
@@ -67,8 +65,6 @@ class AppMetaDataCacheService {
       _box.put(
         packageName,
         existing.copyWith(
-          packageName: existing.packageName,
-          name: existing.name,
           lastSynced: DateTime.now(),
           dailyLimit: dailyLimit,
           clearDailyLimit: dailyLimit == null,
@@ -86,8 +82,6 @@ class AppMetaDataCacheService {
       _box.put(
         packageName,
         existing.copyWith(
-          packageName: existing.packageName,
-          name: existing.name,
           lastSynced: DateTime.now(),
           isTracked: isTracking,
         ),
