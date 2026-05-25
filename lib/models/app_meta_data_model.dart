@@ -26,7 +26,7 @@ class AppMetaDataModel extends HiveObject {
   final bool? isLaunchable;
 
   @HiveField(7)
-  final bool? isTracked;
+  final bool isTracked;
 
   AppMetaDataModel({
     required this.packageName,
@@ -36,7 +36,7 @@ class AppMetaDataModel extends HiveObject {
     this.dailyLimit,
     this.isBlocked,
     this.isLaunchable,
-    this.isTracked,
+    this.isTracked = true,
   });
 
   AppMetaDataModel copyWith({
