@@ -104,7 +104,7 @@ class _HomePageState extends State<HomePage> {
                     }
                     return ListView.separated(
                       shrinkWrap: true,
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         vertical: 16.0,
                         horizontal: 24.0,
                       ),
@@ -114,7 +114,7 @@ class _HomePageState extends State<HomePage> {
                         return AppInfoCard(appInfo: app, totalUsage: app.usage);
                       },
                       separatorBuilder: (_, _) {
-                        return SizedBox(height: 8);
+                        return const SizedBox(height: 8);
                       },
                     );
                   }

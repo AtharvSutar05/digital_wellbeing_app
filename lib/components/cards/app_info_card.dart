@@ -28,7 +28,11 @@ class AppInfoCard extends StatelessWidget {
           ),
           backgroundColor: const Color(0xFFEDEEED),
           titlePadding: const EdgeInsets.only(left: 24, right: 24, top: 16),
-          contentPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
+          contentPadding: const EdgeInsets.only(
+            left: 24,
+            right: 24,
+            bottom: 16,
+          ),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -36,7 +40,7 @@ class AppInfoCard extends StatelessWidget {
                 height: 48,
                 width: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: AppIconWidget(packageName: appInfo.packageName),
@@ -62,8 +66,8 @@ class AppInfoCard extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.white,
+                    const SnackBar(
+                      backgroundColor: Color(0xFFFFFFFF),
                       content: Text(
                         "This feature is coming soon!!!",
                         style: TextStyle(
@@ -78,7 +82,7 @@ class AppInfoCard extends StatelessWidget {
                     ),
                   );
                 },
-                leading: const Icon(Icons.folder),
+                leading: const Icon(Icons.folder, color: Color(0xFF191C1C)),
                 title: const Text(
                   "Move to Category",
                   style: TextStyle(
@@ -106,7 +110,7 @@ class AppInfoCard extends StatelessWidget {
                       backgroundColor: Colors.white,
                       content: Text(
                         "${appInfo.name} removed from tracking",
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color(0xFF191C1C),
                           fontFamily: "Manrope",
                           fontWeight: FontWeight.w500,
@@ -116,7 +120,7 @@ class AppInfoCard extends StatelessWidget {
                       ),
                       action: SnackBarAction(
                         label: 'Undo',
-                        textColor: Colors.blue,
+                        textColor: const Color(0xFF1E88E5),
                         onPressed: () {
                           bloc.add(
                             UpdateTracking(
@@ -133,7 +137,10 @@ class AppInfoCard extends StatelessWidget {
                     ),
                   );
                 },
-                leading: const Icon(Icons.visibility_off),
+                leading: const Icon(
+                  Icons.visibility_off,
+                  color: Color(0xFF191C1C),
+                ),
                 title: const Text(
                   "Hide from Tracking",
                   style: TextStyle(
@@ -162,7 +169,7 @@ class AppInfoCard extends StatelessWidget {
               height: 48,
               width: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: AppIconWidget(packageName: appInfo.packageName),
@@ -258,7 +265,7 @@ class AppInfoCard extends StatelessWidget {
                     ? Icons.hourglass_top_rounded
                     : Icons.hourglass_bottom_rounded,
                 size: 20,
-                color: Color(0xFF191C1C),
+                color: const Color(0xFF191C1C),
               ),
             ),
           ],
