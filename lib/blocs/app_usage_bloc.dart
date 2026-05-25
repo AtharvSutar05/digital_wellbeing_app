@@ -15,16 +15,12 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   final AppInfoService _appInfoService = AppInfoService();
   final AppMetaDataCacheService _appMetaDataCacheService =
       AppMetaDataCacheService();
-  final ignoredPackages = {
-    'com.android.systemui',
-    'com.miui.home',
-    'com.google.android.inputmethod.latin',
-  };
 
   AppUsageBloc() : super(AppUsageLoading()) {
     on<LoadAppsUsage>(onLoadAppsUsage);
     on<UpdateCategory>(onUpdateCategory);
     on<UpdateDailyLimit>(onUpdateDailyLimit);
+    on<UpdateTracking>(onUpdateTracking);
   }
 
   Future<void> onLoadAppsUsage(
@@ -76,7 +72,6 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         appInfoMap.addAll(missingAppMap);
       }
 
-      appInfoMap.remove("com.example.wellbeing_app");
       emit(
         AppUsageLoaded(
           appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap),
@@ -99,7 +94,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               final app = appInfoMap[usage.packageName];
               return usage.usage.inSeconds > 0 &&
                   app?.isLaunchable == true &&
-                  !ignoredPackages.contains(usage.packageName);
+                  app?.isTracked != false;
             })
             .map((usage) {
               final app = appInfoMap[usage.packageName];
@@ -142,5 +137,26 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       dailyLimit: event.dailyLimit,
     );
     add(LoadAppsUsage());
+  }
+
+  Future<void> onUpdateTracking(
+    UpdateTracking event,
+    Emitter<AppUsageState> emit,
+  ) async {
+    await _appMetaDataCacheService.updateTracking(
+      packageName: event.packageName,
+      isTracking: event.isTracking,
+    );
+    final currentState = state;
+    if (currentState is AppUsageLoaded) {
+      final updatedList = List<CustomAppInfo>.from(currentState.appInfoList);
+      if (!event.isTracking) {
+        updatedList.removeWhere((app) => app.packageName == event.packageName);
+      } else {
+        add(LoadAppsUsage());
+        return;
+      }
+      emit(AppUsageLoaded(appInfoList: updatedList));
+    }
   }
 }

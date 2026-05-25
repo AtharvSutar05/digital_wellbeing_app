@@ -24,7 +24,7 @@ class AppMetaDataModelAdapter extends TypeAdapter<AppMetaDataModel> {
       dailyLimit: fields[4] as int?,
       isBlocked: fields[5] as bool?,
       isLaunchable: fields[6] as bool?,
-      isTracked: fields[7] as bool?,
+      isTracked: fields[7] as bool,
     );
   }
 

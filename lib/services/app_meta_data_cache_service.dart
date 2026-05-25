@@ -73,6 +73,22 @@ class AppMetaDataCacheService {
     }
   }
 
+  Future<void> updateIsBlocked({
+    required String packageName,
+    required bool isBlocked,
+}) async {
+    final existing = _box.get(packageName);
+    if(existing != null) {
+      _box.put(
+        packageName,
+        existing.copyWith(
+          lastSynced: DateTime.now(),
+          isBlocked: isBlocked,
+        )
+      );
+    }
+  }
+
   Future<void> updateTracking({
     required String packageName,
     required bool isTracking,
