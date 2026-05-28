@@ -5,20 +5,46 @@ import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/screens/home_page.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
+import 'package:wellbeing_app/services/daily_usage_service.dart';
+import 'package:wellbeing_app/services/pending_usage_sync_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'models/app_meta_data_model.dart';
+import 'models/app_usage_model.dart';
+import 'models/daily_usage_model.dart';
 
 void main() async {
-  FlutterNativeSplash.preserve(widgetsBinding: WidgetsFlutterBinding.ensureInitialized());
+  FlutterNativeSplash.preserve(
+    widgetsBinding: WidgetsFlutterBinding.ensureInitialized(),
+  );
   await Hive.initFlutter();
+
+  // adapters
   Hive.registerAdapter(AppMetaDataModelAdapter());
-  final AppMetaDataCacheService appMetaDataCacheService = AppMetaDataCacheService();
+
+  Hive.registerAdapter(DailyUsageModelAdapter());
+
+  Hive.registerAdapter(AppUsageModelAdapter());
+
+  // services
+  final appMetaDataCacheService = AppMetaDataCacheService();
+
   await appMetaDataCacheService.init();
+
+  final dailyUsageService = DailyUsageService();
+
+  await dailyUsageService.init();
+
+  // import pending worker data
+  await PendingUsageSyncService().syncPendingUsage();
+
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => AppUsageBloc()..add(LoadAppsUsage())),
+        BlocProvider(
+          create: (_) =>
+              AppUsageBloc()..add(LoadAppsUsage(date: DateTime.now())),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -34,10 +60,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppConstants.themeData,
       builder: (context, child) {
-        return Container(
-          color: Colors.white,
-          child: child,
-        );
+        return Container(color: Colors.white, child: child);
       },
       home: const HomePage(),
     );

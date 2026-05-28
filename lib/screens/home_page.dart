@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
 
     final state = context.read<AppUsageBloc>().state;
     if (granted && state is! AppUsageLoaded) {
-      context.read<AppUsageBloc>().add(LoadAppsUsage());
+      context.read<AppUsageBloc>().add(LoadAppsUsage(date: DateTime.now()));
     }
   }
 
@@ -111,7 +111,10 @@ class _HomePageState extends State<HomePage> {
                       itemCount: customAppInfoList.length,
                       itemBuilder: (_, i) {
                         final app = customAppInfoList[i];
-                        return AppInfoCard(appInfo: app, totalUsage: app.usage);
+                        return AppInfoCard(
+                          appInfo: app,
+                          totalUsage: app.usage,
+                        );
                       },
                       separatorBuilder: (_, _) {
                         return const SizedBox(height: 8);

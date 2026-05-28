@@ -1,18 +1,20 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage_state.dart';
+import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
-import 'package:wellbeing_app/models/app_usage_data.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
+import 'package:wellbeing_app/services/daily_usage_service.dart';
 import 'package:wellbeing_app/utils/enums.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   final AppUsageService _appUsageService = AppUsageService();
   final AppInfoService _appInfoService = AppInfoService();
+  final DailyUsageService _dailyUsageService = DailyUsageService();
   final AppMetaDataCacheService _appMetaDataCacheService =
       AppMetaDataCacheService();
 
@@ -29,16 +31,24 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   ) async {
     try {
       emit(AppUsageLoading());
+      List<AppUsageModel> appsUsage;
 
-      //fetching usage state and local storage
-      final results = await Future.wait([
-        _appUsageService.getUsageStats(),
-        _appMetaDataCacheService.loadAll(),
-      ]);
+      final selectedDate = event.date;
 
-      final appsUsage = results[0] as List<AppUsageData>;
-      Map<String, AppMetaDataModel>? appInfoMap =
-          results[1] as Map<String, AppMetaDataModel>?;
+      final isToday =
+          selectedDate.year == DateTime.now().year &&
+          selectedDate.month == DateTime.now().month &&
+          selectedDate.day == DateTime.now().day;
+
+      if (isToday) {
+        appsUsage = await _appUsageService.getUsageStats();
+      } else {
+        final dailyUsage = _dailyUsageService.getUsageByDate(selectedDate);
+        appsUsage = dailyUsage?.apps ?? [];
+      }
+
+
+      Map<String, AppMetaDataModel>? appInfoMap = await _appMetaDataCacheService.loadAll();
 
       // empty local storage
       if (appInfoMap == null) {
@@ -75,6 +85,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       emit(
         AppUsageLoaded(
           appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap),
+          selectedDate: selectedDate,
         ),
       );
     } catch (e) {
@@ -85,14 +96,14 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
   }
 
   List<CustomAppInfo> makeCustomAppInfoList(
-    List<AppUsageData> appsUsage,
+    List<AppUsageModel> appsUsage,
     Map<String, AppMetaDataModel> appInfoMap,
   ) {
     final customAppInfoList =
         appsUsage
             .where((usage) {
               final app = appInfoMap[usage.packageName];
-              return usage.usage.inSeconds > 0 &&
+              return Duration(milliseconds: usage.usageMillis).inSeconds > 0 &&
                   app?.isLaunchable == true &&
                   app?.isTracked != false;
             })
@@ -101,7 +112,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
               return CustomAppInfo(
                 packageName: usage.packageName,
                 name: app?.name ?? usage.packageName,
-                usage: usage.usage,
+                usage: Duration(milliseconds: usage.usageMillis),
                 category: appCategoryConverter(
                   categoryInt: app?.categoryIndex,
                   packageName: usage.packageName,
@@ -125,7 +136,10 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       packageName: event.packageName,
       categoryIndex: event.category.index,
     );
-    add(LoadAppsUsage());
+    final currentState = state;
+    if(currentState is AppUsageLoaded) {
+      add(LoadAppsUsage(date: currentState.selectedDate));
+    }
   }
 
   Future<void> onUpdateDailyLimit(
@@ -136,7 +150,10 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       packageName: event.packageName,
       dailyLimit: event.dailyLimit,
     );
-    add(LoadAppsUsage());
+    final currentState = state;
+    if(currentState is AppUsageLoaded) {
+      add(LoadAppsUsage(date: currentState.selectedDate));
+    }
   }
 
   Future<void> onUpdateTracking(
@@ -153,10 +170,10 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       if (!event.isTracking) {
         updatedList.removeWhere((app) => app.packageName == event.packageName);
       } else {
-        add(LoadAppsUsage());
+        add(LoadAppsUsage(date: currentState.selectedDate));
         return;
       }
-      emit(AppUsageLoaded(appInfoList: updatedList));
+      emit(AppUsageLoaded(appInfoList: updatedList, selectedDate: currentState.selectedDate));
     }
   }
 }

@@ -11,11 +11,12 @@ class AppUsageLoading extends AppUsageState {}
 
 class AppUsageLoaded extends AppUsageState {
   final List<CustomAppInfo> appInfoList;
+  final DateTime selectedDate;
 
-  const AppUsageLoaded({required this.appInfoList});
+  const AppUsageLoaded({required this.appInfoList, required this.selectedDate});
 
   @override
-  List<Object?> get props => [appInfoList];
+  List<Object?> get props => [appInfoList, selectedDate];
 }
 
 class AppUsageError extends AppUsageState {
