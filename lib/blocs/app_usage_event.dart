@@ -7,7 +7,14 @@ abstract class AppUsageEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadAppsUsage extends AppUsageEvent {}
+class LoadAppsUsage extends AppUsageEvent {
+  final DateTime date;
+
+  const LoadAppsUsage({required this.date});
+
+  @override
+  List<Object?> get props => [date];
+}
 
 class UpdateCategory extends AppUsageEvent {
   final String packageName;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:installed_apps/app_info.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 
 Future<void> showSetAppTimerDialog({
