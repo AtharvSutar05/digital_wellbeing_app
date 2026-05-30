@@ -25,7 +25,7 @@ class AppUsageModelAdapter extends TypeAdapter<AppUsageModel> {
   @override
   void write(BinaryWriter writer, AppUsageModel obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(2)
       ..writeByte(0)
       ..write(obj.packageName)
       ..writeByte(1)

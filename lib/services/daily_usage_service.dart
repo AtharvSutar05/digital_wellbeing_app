@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/daily_usage_model.dart';
+import 'package:wellbeing_app/models/weekly_usage_point.dart';
 
 class DailyUsageService {
   static final DailyUsageService _instance = DailyUsageService._internal();
@@ -46,6 +47,25 @@ class DailyUsageService {
 
   List<DailyUsageModel> getAllUsage() {
     return _dailyUsageBox.values.toList();
+  }
+
+  List<WeeklyUsagePoint> getCurrentWeekUsage() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final daysSinceSunday = now.weekday % 7;
+    final startOfWeek = today.subtract(Duration(days: daysSinceSunday));
+
+    return List.generate(7, (i) {
+      final day = startOfWeek.add(Duration(days: i));
+      final formattedDate = DateFormat("yyyy-MM-dd").format(day);
+      final record = day.isAfter(today)
+          ? null
+          : _dailyUsageBox.get(formattedDate);
+      return WeeklyUsagePoint(
+        date: day,
+        usageMillis: record?.totalUsageMillis ?? 0,
+      );
+    });
   }
 
   DailyUsageModel? getUsageByDate(DateTime date) {

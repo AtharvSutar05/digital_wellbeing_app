@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wellbeing_app/blocs/app_usage_event.dart';
-import 'package:wellbeing_app/blocs/app_usage_state.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
@@ -47,8 +47,8 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         appsUsage = dailyUsage?.apps ?? [];
       }
 
-
-      Map<String, AppMetaDataModel>? appInfoMap = await _appMetaDataCacheService.loadAll();
+      Map<String, AppMetaDataModel>? appInfoMap = await _appMetaDataCacheService
+          .loadAll();
 
       // empty local storage
       if (appInfoMap == null) {
@@ -82,10 +82,17 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         appInfoMap.addAll(missingAppMap);
       }
 
+      final appInfoList = makeCustomAppInfoList(appsUsage, appInfoMap);
+      int totalUsage = 0;
+      for (final app in appInfoList) {
+        totalUsage += app.usage.inMilliseconds;
+      }
+
       emit(
         AppUsageLoaded(
-          appInfoList: makeCustomAppInfoList(appsUsage, appInfoMap),
+          appInfoList: appInfoList,
           selectedDate: selectedDate,
+          totalUsage: totalUsage,
         ),
       );
     } catch (e) {
@@ -137,8 +144,13 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       categoryIndex: event.category.index,
     );
     final currentState = state;
-    if(currentState is AppUsageLoaded) {
-      add(LoadAppsUsage(date: currentState.selectedDate));
+    if (currentState is AppUsageLoaded) {
+      add(
+        LoadAppsUsage(
+          date: currentState.selectedDate,
+          totalUsage: currentState.totalUsage,
+        ),
+      );
     }
   }
 
@@ -151,8 +163,13 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       dailyLimit: event.dailyLimit,
     );
     final currentState = state;
-    if(currentState is AppUsageLoaded) {
-      add(LoadAppsUsage(date: currentState.selectedDate));
+    if (currentState is AppUsageLoaded) {
+      add(
+        LoadAppsUsage(
+          date: currentState.selectedDate,
+          totalUsage: currentState.totalUsage,
+        ),
+      );
     }
   }
 
@@ -167,13 +184,31 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     final currentState = state;
     if (currentState is AppUsageLoaded) {
       final updatedList = List<CustomAppInfo>.from(currentState.appInfoList);
+      int totalUsage = currentState.totalUsage;
       if (!event.isTracking) {
+        final removedApp = updatedList.firstWhere(
+          (app) => app.packageName == event.packageName,
+        );
+
+        totalUsage -= removedApp.usage.inMilliseconds;
+
         updatedList.removeWhere((app) => app.packageName == event.packageName);
       } else {
-        add(LoadAppsUsage(date: currentState.selectedDate));
+        add(
+          LoadAppsUsage(
+            date: currentState.selectedDate,
+            totalUsage: totalUsage,
+          ),
+        );
         return;
       }
-      emit(AppUsageLoaded(appInfoList: updatedList, selectedDate: currentState.selectedDate));
+      emit(
+        AppUsageLoaded(
+          appInfoList: updatedList,
+          selectedDate: currentState.selectedDate,
+          totalUsage: totalUsage,
+        ),
+      );
     }
   }
 }

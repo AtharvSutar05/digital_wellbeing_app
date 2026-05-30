@@ -12,11 +12,28 @@ class AppUsageLoading extends AppUsageState {}
 class AppUsageLoaded extends AppUsageState {
   final List<CustomAppInfo> appInfoList;
   final DateTime selectedDate;
+  final int totalUsage;
 
-  const AppUsageLoaded({required this.appInfoList, required this.selectedDate});
+  const AppUsageLoaded({
+    required this.appInfoList,
+    required this.selectedDate,
+    required this.totalUsage,
+  });
+
+  AppUsageLoaded copyWith({
+    List<CustomAppInfo>? appInfoList,
+    DateTime? selectedDate,
+    int? totalUsage,
+  }) {
+    return AppUsageLoaded(
+      appInfoList: appInfoList ?? this.appInfoList,
+      selectedDate: selectedDate ?? this.selectedDate,
+      totalUsage: totalUsage ?? this.totalUsage,
+    );
+  }
 
   @override
-  List<Object?> get props => [appInfoList, selectedDate];
+  List<Object?> get props => [appInfoList, selectedDate, totalUsage];
 }
 
 class AppUsageError extends AppUsageState {
