@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
-import 'package:wellbeing_app/blocs/app_usage_event.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';

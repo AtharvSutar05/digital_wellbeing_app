@@ -1,8 +1,12 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wellbeing_app/blocs/app_usage_bloc.dart';
-import 'package:wellbeing_app/blocs/app_usage_event.dart';
-import 'package:wellbeing_app/blocs/app_usage_state.dart';
+import 'package:wellbeing_app/blocs/analytics/analytics_bloc.dart';
+import 'package:wellbeing_app/blocs/analytics/analytics_event.dart';
+import 'package:wellbeing_app/blocs/analytics/analytics_state.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
+import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/services/usage_access_service.dart';
@@ -43,7 +47,7 @@ class _HomePageState extends State<HomePage> {
 
     final state = context.read<AppUsageBloc>().state;
     if (granted && state is! AppUsageLoaded) {
-      context.read<AppUsageBloc>().add(LoadAppsUsage(date: DateTime.now()));
+      context.read<AppUsageBloc>().add(LoadAppsUsage(date: DateTime.now(), totalUsage: 0));
     }
   }
 
@@ -62,71 +66,193 @@ class _HomePageState extends State<HomePage> {
             ? const Center(child: CircularProgressIndicator())
             : !_usageAccessGranted!
             ? _buildUsageAccessRequired()
-            : BlocBuilder<AppUsageBloc, AppUsageState>(
-                builder: (context, state) {
-                  if (state is AppUsageError) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Center(
-                        child: Text(
-                          state.message,
-                          style: const TextStyle(
-                            color: Color(0xFF404847),
-                            fontFamily: "Manrope",
-                            fontWeight: FontWeight.w400,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BlocBuilder<AppUsageBloc, AppUsageState>(builder: (context, state) {
+                      if(state is AppUsageLoaded) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 16.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                            const Text(
+                              "Total Usage:",
+                              style: TextStyle(
+                                  fontFamily: "Manrope",
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: 0
+                              ),
+                            ),
+                            Text(
+                              AppConstants.formatDuration(
+                                usage: Duration(
+                                  milliseconds: state.totalUsage,
+                                ),
+                              ),
+                              style: const TextStyle(
+                                fontFamily: "Manrope",
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          ],),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    BlocBuilder<AnalyticsBloc, AnalyticsState>(
+                      builder: (context, state) {
+                        if (state is AnalyticsLoaded) {
+                          if (state.weeklyUsage.isEmpty) {
+                            return SizedBox(
+                              height: 160,
+                              child: Text("No Weekly Usage"),
+                            );
+                          }
+                          final maxUsage = state.weeklyUsage
+                              .map((e) => e.usageMillis)
+                              .reduce(max);
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              left: 24.0,
+                              right: 24.0,
+                              top: 16.0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceEvenly,
+                              children: state.weeklyUsage.map((point) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    context.read<AppUsageBloc>().add(
+                                      LoadAppsUsage(date: point.date, totalUsage: point.usageMillis),
+                                    );
+                                    context.read<AnalyticsBloc>().add(
+                                      UpdateAnalyticsDateAndUsage(
+                                        date: point.date,
+                                      ),
+                                    );
+                                  },
+                                  child: SizedBox(
+                                    height: 160,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          width: 24,
+                                          height: maxUsage == 0
+                                              ? 4
+                                              : (point.usageMillis /
+                                                        maxUsage) *
+                                                    120,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                point.date ==
+                                                    state.selectedDate
+                                                ? Colors.blue
+                                                : Colors.grey,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          point.dayLabel,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontFamily: "Manrope",
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        }
+                        return Center(child: CircularProgressIndicator());
+                      },
+                    ),
+                    BlocBuilder<AppUsageBloc, AppUsageState>(
+                      builder: (context, state) {
+                        if (state is AppUsageError) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24.0,
+                            ),
+                            child: Center(
+                              child: Text(
+                                state.message,
+                                style: const TextStyle(
+                                  color: Color(0xFF404847),
+                                  fontFamily: "Manrope",
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
 
-                  if (state is AppUsageLoaded) {
-                    final List<CustomAppInfo> customAppInfoList =
-                        state.appInfoList;
+                        if (state is AppUsageLoaded) {
+                          final List<CustomAppInfo> customAppInfoList =
+                              state.appInfoList;
 
-                    final Duration totalUsage = customAppInfoList.fold(
-                      Duration.zero,
-                      (sum, app) => sum + app.usage,
-                    );
-                    if (totalUsage.inSeconds == 0) {
-                      return Center(
-                        child: const Text(
-                          "No Usage Today",
-                          style: TextStyle(
-                            fontFamily: 'Manrope',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18,
-                            color: Color(0xFF191C1C),
+                          final Duration totalUsage = customAppInfoList.fold(
+                            Duration.zero,
+                            (sum, app) => sum + app.usage,
+                          );
+                          if (totalUsage.inSeconds == 0) {
+                            return Center(
+                              child: const Text(
+                                "No Usage Today",
+                                style: TextStyle(
+                                  fontFamily: 'Manrope',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  color: Color(0xFF191C1C),
+                                ),
+                              ),
+                            );
+                          }
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16.0,
+                              horizontal: 24.0,
+                            ),
+                            itemCount: customAppInfoList.length,
+                            itemBuilder: (_, i) {
+                              final app = customAppInfoList[i];
+                              return AppInfoCard(
+                                appInfo: app,
+                                totalUsage: app.usage,
+                              );
+                            },
+                            separatorBuilder: (_, _) {
+                              return const SizedBox(height: 8);
+                            },
+                          );
+                        }
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(AppConstants.primary),
                           ),
-                        ),
-                      );
-                    }
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16.0,
-                        horizontal: 24.0,
-                      ),
-                      itemCount: customAppInfoList.length,
-                      itemBuilder: (_, i) {
-                        final app = customAppInfoList[i];
-                        return AppInfoCard(
-                          appInfo: app,
-                          totalUsage: app.usage,
                         );
                       },
-                      separatorBuilder: (_, _) {
-                        return const SizedBox(height: 8);
-                      },
-                    );
-                  }
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(AppConstants.primary),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
       ),
     );
