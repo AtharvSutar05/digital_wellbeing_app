@@ -16,10 +16,7 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
   ) async {
     final weeklyUsage = _dailyUsageService.getCurrentWeekUsage();
     emit(
-      AnalyticsLoaded(
-        weeklyUsage: weeklyUsage,
-        selectedDate: DateTime.now(),
-      ),
+      AnalyticsLoaded(weeklyUsage: weeklyUsage, selectedDate: DateTime.now()),
     );
   }
 
@@ -28,11 +25,7 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     Emitter<AnalyticsState> emit,
   ) {
     if (state is AnalyticsLoaded) {
-      emit(
-        (state as AnalyticsLoaded).copyWith(
-          selectedDate: event.date,
-        ),
-      );
+      emit((state as AnalyticsLoaded).copyWith(selectedDate: event.date));
     }
   }
 }
