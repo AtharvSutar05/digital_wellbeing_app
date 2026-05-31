@@ -4,6 +4,7 @@ import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
+import 'package:wellbeing_app/models/weekly_usage_point.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
@@ -33,7 +34,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       emit(AppUsageLoading());
       List<AppUsageModel> appsUsage;
 
-      final selectedDate = event.date;
+      final selectedDate = DateTime(event.date.year, event.date.month, event.date.day);
 
       final isToday =
           selectedDate.year == DateTime.now().year &&
@@ -88,9 +89,14 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         totalUsage += app.usage.inMilliseconds;
       }
 
+      // this one is bad implementation in my architecture
+      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService
+          .getCurrentWeekUsage(todayTotalUsage: totalUsage);
+
       emit(
         AppUsageLoaded(
           appInfoList: appInfoList,
+          weeklyUsage: weeklyUsage,
           selectedDate: selectedDate,
           totalUsage: totalUsage,
         ),
@@ -205,6 +211,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
       emit(
         AppUsageLoaded(
           appInfoList: updatedList,
+          weeklyUsage: currentState.weeklyUsage,
           selectedDate: currentState.selectedDate,
           totalUsage: totalUsage,
         ),
