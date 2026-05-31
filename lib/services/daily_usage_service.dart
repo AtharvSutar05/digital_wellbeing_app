@@ -49,18 +49,36 @@ class DailyUsageService {
     return _dailyUsageBox.values.toList();
   }
 
-  List<WeeklyUsagePoint> getCurrentWeekUsage() {
+  List<WeeklyUsagePoint> getCurrentWeekUsage({
+    required int todayTotalUsage,
+  }) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final daysSinceSunday = now.weekday % 7;
     final startOfWeek = today.subtract(Duration(days: daysSinceSunday));
+    bool isSameDay(DateTime a, DateTime b) {
+      return a.year == b.year &&
+          a.month == b.month &&
+          a.day == b.day;
+    }
 
     return List.generate(7, (i) {
       final day = startOfWeek.add(Duration(days: i));
+
+      // Today's bar should use live usage
+      if (isSameDay(day, today)) {
+        return WeeklyUsagePoint(
+          date: day,
+          usageMillis: todayTotalUsage,
+        );
+      }
+
       final formattedDate = DateFormat("yyyy-MM-dd").format(day);
+
       final record = day.isAfter(today)
           ? null
           : _dailyUsageBox.get(formattedDate);
+
       return WeeklyUsagePoint(
         date: day,
         usageMillis: record?.totalUsageMillis ?? 0,

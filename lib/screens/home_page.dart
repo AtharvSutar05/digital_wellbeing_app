@@ -1,16 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wellbeing_app/blocs/analytics/analytics_bloc.dart';
-import 'package:wellbeing_app/blocs/analytics/analytics_event.dart';
-import 'package:wellbeing_app/blocs/analytics/analytics_state.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
+import 'package:wellbeing_app/models/weekly_usage_point.dart';
 import 'package:wellbeing_app/services/usage_access_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,7 +46,9 @@ class _HomePageState extends State<HomePage> {
 
     final state = context.read<AppUsageBloc>().state;
     if (granted && state is! AppUsageLoaded) {
-      context.read<AppUsageBloc>().add(LoadAppsUsage(date: DateTime.now(), totalUsage: 0));
+      context.read<AppUsageBloc>().add(
+        LoadAppsUsage(date: DateTime.now(), totalUsage: 0),
+      );
     }
   }
 
@@ -70,116 +71,115 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    BlocBuilder<AppUsageBloc, AppUsageState>(builder: (context, state) {
-                      if(state is AppUsageLoaded) {
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 16.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                            const Text(
-                              "Total Usage:",
-                              style: TextStyle(
-                                  fontFamily: "Manrope",
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w400,
-                                  letterSpacing: 0
-                              ),
-                            ),
-                            Text(
-                              AppConstants.formatDuration(
-                                usage: Duration(
-                                  milliseconds: state.totalUsage,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                fontFamily: "Manrope",
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0,
-                              ),
-                            ),
-                          ],),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                    BlocBuilder<AnalyticsBloc, AnalyticsState>(
+                    BlocBuilder<AppUsageBloc, AppUsageState>(
                       builder: (context, state) {
-                        if (state is AnalyticsLoaded) {
-                          if (state.weeklyUsage.isEmpty) {
-                            return SizedBox(
-                              height: 160,
-                              child: Text("No Weekly Usage"),
-                            );
-                          }
-                          final maxUsage = state.weeklyUsage
-                              .map((e) => e.usageMillis)
-                              .reduce(max);
+                        if (state is AppUsageLoaded) {
                           return Padding(
                             padding: const EdgeInsets.only(
                               left: 24.0,
                               right: 24.0,
                               top: 16.0,
                             ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceEvenly,
-                              children: state.weeklyUsage.map((point) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    context.read<AppUsageBloc>().add(
-                                      LoadAppsUsage(date: point.date, totalUsage: point.usageMillis),
-                                    );
-                                    context.read<AnalyticsBloc>().add(
-                                      UpdateAnalyticsDateAndUsage(
-                                        date: point.date,
-                                      ),
-                                    );
-                                  },
-                                  child: SizedBox(
-                                    height: 160,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.end,
-                                      children: [
-                                        Container(
-                                          width: 24,
-                                          height: maxUsage == 0
-                                              ? 4
-                                              : (point.usageMillis /
-                                                        maxUsage) *
-                                                    120,
-                                          decoration: BoxDecoration(
-                                            color:
-                                                point.date ==
-                                                    state.selectedDate
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          point.dayLabel,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontFamily: "Manrope",
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0,
-                                          ),
-                                        ),
-                                      ],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Total Usage:",
+                                  style: TextStyle(
+                                    fontFamily: "Manrope",
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                                Text(
+                                  AppConstants.formatDuration(
+                                    usage: Duration(
+                                      milliseconds: state.totalUsage,
                                     ),
                                   ),
-                                );
-                              }).toList(),
+                                  style: const TextStyle(
+                                    fontFamily: "Manrope",
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }
-                        return Center(child: CircularProgressIndicator());
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    BlocSelector<
+                      AppUsageBloc,
+                      AppUsageState,
+                      ({List<WeeklyUsagePoint> list, DateTime? selectedDate})
+                    >(
+                      selector: (state) {
+                        if (state is AppUsageLoaded) {
+                          return (
+                            list: state.weeklyUsage,
+                            selectedDate: state.selectedDate,
+                          );
+                        }
+                        return (list: const [], selectedDate: null);
+                      },
+                      builder: (context, selectedData) {
+                        final weeklyUsage = selectedData.list;
+                        final selectedDate = selectedData.selectedDate;
+
+                        // 2. If the list is empty, we assume it's loading or empty
+                        if (weeklyUsage.isEmpty) {
+                          return const SizedBox(
+                            height: 160,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+
+                        return SizedBox(
+                          height: 200,
+                          child: SfCartesianChart(
+                            plotAreaBorderWidth: 0,
+                            primaryXAxis: CategoryAxis(
+                              majorGridLines: const MajorGridLines(width: 0),
+                              axisLine: const AxisLine(width: 0),
+                            ),
+                            primaryYAxis: NumericAxis(
+                              minimum: 0,
+                              interval: 2,
+                              labelFormat: '{value}h',
+                              axisLine: const AxisLine(width: 0),
+                            ),
+                            tooltipBehavior: TooltipBehavior(
+                              enable: true,
+                              format: 'point.x : point.y h',
+                            ),
+                            series: <CartesianSeries>[
+                              ColumnSeries<WeeklyUsagePoint, String>(
+                                onPointTap: (ChartPointDetails details) {
+                                  final selectedDate =
+                                      weeklyUsage[details.pointIndex!].date;
+                                  final totalUsage =
+                                      weeklyUsage[details.pointIndex!]
+                                          .usageMillis;
+                                  context.read<AppUsageBloc>().add(
+                                    LoadAppsUsage(
+                                      date: selectedDate,
+                                      totalUsage: totalUsage,
+                                    ),
+                                  );
+                                },
+                                dataSource: weeklyUsage,
+                                xValueMapper: (data, _) => data.dayLabel,
+                                yValueMapper: (data, _) =>
+                                    data.usageMillis / (1000 * 60 * 60),
+                              ),
+                            ],
+                          ),
+                        );
                       },
                     ),
                     BlocBuilder<AppUsageBloc, AppUsageState>(
