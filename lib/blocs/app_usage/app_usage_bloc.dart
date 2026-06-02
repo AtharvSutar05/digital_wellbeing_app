@@ -31,6 +31,9 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     Emitter<AppUsageState> emit,
   ) async {
     try {
+      // Keep track of what the state was before we emit loading
+      final currentState = state;
+
       emit(AppUsageLoading());
       List<AppUsageModel> appsUsage;
 
@@ -89,9 +92,25 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         totalUsage += app.usage.inMilliseconds;
       }
 
-      // this one is bad implementation in my architecture
-      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService
-          .getCurrentWeekUsage(todayTotalUsage: totalUsage);
+      int trackedTodayUsage = 0;
+
+      if (isToday) {
+        // If we are looking at today, this fresh calculation IS today's usage
+        trackedTodayUsage = totalUsage;
+      } else if (currentState is AppUsageLoaded) {
+        // If we are looking at history, pull today's usage from our previous state memory
+        trackedTodayUsage = currentState.todayTotalUsage;
+      } else {
+        // Fallback: If there's no state history yet, try to read the live stats right now
+        // or fall back to 0 if that fails
+        final liveStats = await _appUsageService.getUsageStats();
+        trackedTodayUsage = liveStats.fold(0, (sum, item) => sum + item.usageMillis);
+      }
+
+      // Always pass the tracked today usage to keep the graph stable!
+      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService.getCurrentWeekUsage(
+        liveTodayUsage: trackedTodayUsage,
+      );
 
       emit(
         AppUsageLoaded(
@@ -99,6 +118,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
           weeklyUsage: weeklyUsage,
           selectedDate: selectedDate,
           totalUsage: totalUsage,
+          todayTotalUsage: trackedTodayUsage,
         ),
       );
     } catch (e) {
@@ -214,6 +234,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
           weeklyUsage: currentState.weeklyUsage,
           selectedDate: currentState.selectedDate,
           totalUsage: totalUsage,
+          todayTotalUsage: currentState.todayTotalUsage
         ),
       );
     }

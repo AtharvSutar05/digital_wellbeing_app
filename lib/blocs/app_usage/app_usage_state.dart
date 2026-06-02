@@ -15,12 +15,14 @@ class AppUsageLoaded extends AppUsageState {
   final List<WeeklyUsagePoint> weeklyUsage;
   final DateTime selectedDate;
   final int totalUsage;
+  final int todayTotalUsage;
 
   const AppUsageLoaded({
     required this.appInfoList,
     required this.weeklyUsage,
     required this.selectedDate,
     required this.totalUsage,
+    required this.todayTotalUsage,
   });
 
   AppUsageLoaded copyWith({
@@ -28,17 +30,25 @@ class AppUsageLoaded extends AppUsageState {
     List<WeeklyUsagePoint>? weeklyUsage,
     DateTime? selectedDate,
     int? totalUsage,
+    int? todayTotalUsage,
   }) {
     return AppUsageLoaded(
       appInfoList: appInfoList ?? this.appInfoList,
       weeklyUsage: weeklyUsage ?? this.weeklyUsage,
       selectedDate: selectedDate ?? this.selectedDate,
       totalUsage: totalUsage ?? this.totalUsage,
+      todayTotalUsage: todayTotalUsage ?? this.todayTotalUsage,
     );
   }
 
   @override
-  List<Object?> get props => [appInfoList, selectedDate, totalUsage];
+  List<Object?> get props => [
+    appInfoList,
+    selectedDate,
+    totalUsage,
+    weeklyUsage,
+    todayTotalUsage,
+  ];
 }
 
 class AppUsageError extends AppUsageState {
