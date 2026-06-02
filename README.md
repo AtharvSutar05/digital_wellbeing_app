@@ -1,17 +1,131 @@
-# wellbeing_app
+# Digital Wellbeing App
 
-A new Flutter project.
+A Flutter-based Digital Wellbeing application that helps users understand their smartphone usage habits, track screen time, and reduce excessive app usage through daily limits and usage analytics.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+### 📊 Weekly Usage Analysis
 
-A few resources to get you started if this is your first Flutter project:
+* Displays screen time trends for the current week.
+* Interactive weekly usage chart.
+* Quickly identify high and low usage days.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+### ⏱ Today's Screen Time
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* Shows total device usage for the current day.
+* Updates based on actual app usage statistics collected from Android UsageStats APIs.
+
+### 📱 App Usage Breakdown
+
+* Lists apps used today.
+* Displays individual app usage duration.
+* Sorted by usage time for easy analysis.
+
+### 🎯 Daily App Limits
+
+Users can set a daily usage limit for specific apps.
+
+Features include:
+
+* Custom daily limits per app.
+* Visual progress tracking using Linear Progress Indicators.
+* Progress bar changes color when the limit is exceeded.
+* Easily identify apps consuming more time than intended.
+
+### ⭐ Track / Untrack Apps
+
+* Choose which apps to monitor.
+* Remove apps from tracking when not needed.
+* Focus only on apps relevant to your wellbeing goals.
+
+## Screenshots
+
+*Add screenshots here*
+
+## Tech Stack
+
+* Flutter
+* Dart
+* BLoC State Management
+* Android UsageStats API
+* Method Channels (Flutter ↔ Android)
+* Hive (Local Storage)
+
+## How It Works
+
+### Usage Tracking
+
+The app collects usage data from Android's UsageStats API and processes it to calculate:
+
+* Daily screen time
+* Per-app usage duration
+* Weekly usage summaries
+
+### Limit Monitoring
+
+For tracked applications:
+
+1. User sets a daily usage limit.
+2. App compares actual usage against the limit.
+3. Progress indicator visualizes usage.
+4. Indicator turns red when the user exceeds the limit.
+
+## Project Goals
+
+This project aims to help users:
+
+* Build healthier digital habits
+* Reduce screen addiction
+* Stay aware of daily app usage
+* Improve productivity through intentional device usage
+
+## Current Features
+
+* [x] Weekly usage analytics
+* [x] Today's total screen time
+* [x] Per-app usage tracking
+* [x] Daily app limits
+* [x] Track / Untrack apps
+* [x] Usage progress indicators
+* [x] Android UsageStats integration
+
+## Planned Features
+
+* [ ] App usage notifications
+* [ ] Weekly wellbeing reports
+* [ ] Usage goals and achievements
+* [ ] Focus mode
+* [ ] App category insights
+* [ ] Usage history trends
+* [ ] Backup & restore settings
+
+## Permissions Required
+
+### Usage Access Permission
+
+The app requires **Usage Access Permission** to read app usage statistics.
+
+Path:
+
+`Settings → Security & Privacy → Usage Access`
+
+Without this permission, usage data cannot be collected.
+
+## Installation
+
+```bash
+git clone https://github.com/yourusername/digital-wellbeing-app.git
+
+cd digital-wellbeing-app
+
+flutter pub get
+
+flutter run
+```
+
+## Disclaimer
+
+This application is an independent educational project and is not affiliated with Google's Digital Wellbeing application.
+
+
+
