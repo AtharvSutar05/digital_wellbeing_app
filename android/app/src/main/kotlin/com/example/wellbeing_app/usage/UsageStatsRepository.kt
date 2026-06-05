@@ -11,7 +11,8 @@ class UsageStatsRepository(
         "com.android.systemui",
         "com.google.android.inputmethod.latin",
         "com.miui.home",
-        "com.samsung.android.honeyboard"
+        "com.samsung.android.honeyboard",
+        "com.example.wellbeing_app"
     )
 
     fun calculateUsage(

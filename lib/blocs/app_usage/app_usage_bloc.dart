@@ -4,7 +4,6 @@ import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/app_meta_data_model.dart';
-import 'package:wellbeing_app/models/weekly_usage_point.dart';
 import 'package:wellbeing_app/services/app_info_service.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/services/app_usage_service.dart';
@@ -31,13 +30,15 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     Emitter<AppUsageState> emit,
   ) async {
     try {
-      // Keep track of what the state was before we emit loading
-      final currentState = state;
 
       emit(AppUsageLoading());
       List<AppUsageModel> appsUsage;
 
-      final selectedDate = DateTime(event.date.year, event.date.month, event.date.day);
+      final selectedDate = DateTime(
+        event.date.year,
+        event.date.month,
+        event.date.day,
+      );
 
       final isToday =
           selectedDate.year == DateTime.now().year &&
@@ -92,33 +93,11 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
         totalUsage += app.usage.inMilliseconds;
       }
 
-      int trackedTodayUsage = 0;
-
-      if (isToday) {
-        // If we are looking at today, this fresh calculation IS today's usage
-        trackedTodayUsage = totalUsage;
-      } else if (currentState is AppUsageLoaded) {
-        // If we are looking at history, pull today's usage from our previous state memory
-        trackedTodayUsage = currentState.todayTotalUsage;
-      } else {
-        // Fallback: If there's no state history yet, try to read the live stats right now
-        // or fall back to 0 if that fails
-        final liveStats = await _appUsageService.getUsageStats();
-        trackedTodayUsage = liveStats.fold(0, (sum, item) => sum + item.usageMillis);
-      }
-
-      // Always pass the tracked today usage to keep the graph stable!
-      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService.getCurrentWeekUsage(
-        liveTodayUsage: trackedTodayUsage,
-      );
-
       emit(
         AppUsageLoaded(
           appInfoList: appInfoList,
-          weeklyUsage: weeklyUsage,
           selectedDate: selectedDate,
           totalUsage: totalUsage,
-          todayTotalUsage: trackedTodayUsage,
         ),
       );
     } catch (e) {
@@ -171,12 +150,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     );
     final currentState = state;
     if (currentState is AppUsageLoaded) {
-      add(
-        LoadAppsUsage(
-          date: currentState.selectedDate,
-          totalUsage: currentState.totalUsage,
-        ),
-      );
+      add(LoadAppsUsage(date: currentState.selectedDate));
     }
   }
 
@@ -190,12 +164,7 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     );
     final currentState = state;
     if (currentState is AppUsageLoaded) {
-      add(
-        LoadAppsUsage(
-          date: currentState.selectedDate,
-          totalUsage: currentState.totalUsage,
-        ),
-      );
+      add(LoadAppsUsage(date: currentState.selectedDate));
     }
   }
 
@@ -220,21 +189,14 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
 
         updatedList.removeWhere((app) => app.packageName == event.packageName);
       } else {
-        add(
-          LoadAppsUsage(
-            date: currentState.selectedDate,
-            totalUsage: totalUsage,
-          ),
-        );
+        add(LoadAppsUsage(date: currentState.selectedDate));
         return;
       }
       emit(
         AppUsageLoaded(
           appInfoList: updatedList,
-          weeklyUsage: currentState.weeklyUsage,
           selectedDate: currentState.selectedDate,
           totalUsage: totalUsage,
-          todayTotalUsage: currentState.todayTotalUsage
         ),
       );
     }

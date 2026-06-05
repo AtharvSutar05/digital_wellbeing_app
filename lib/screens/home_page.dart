@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
+import 'package:wellbeing_app/blocs/weekly_analysis/weekly_analysis_bloc.dart';
+import 'package:wellbeing_app/blocs/weekly_analysis/weekly_analysis_state.dart';
+import 'package:wellbeing_app/blocs/weekly_analysis/weekly_usage_event.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
 import 'package:wellbeing_app/models/weekly_usage_point.dart';
 import 'package:wellbeing_app/services/usage_access_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:wellbeing_app/utils/extensions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -41,7 +46,7 @@ class _HomePageState extends State<HomePage> {
     final state = context.read<AppUsageBloc>().state;
     if (granted && state is! AppUsageLoaded) {
       context.read<AppUsageBloc>().add(
-        LoadAppsUsage(date: DateTime.now(), totalUsage: 0),
+        LoadAppsUsage(date: DateTime.now().toDateOnly()),
       );
     }
   }
@@ -76,8 +81,14 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTotalUsageHeader(),
-          _buildWeeklyChart(height: 200),
+          Padding(
+            padding: EdgeInsets.only(top: 16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [_buildTotalUsageHeader(), _buildWeeklyChart()],
+            ),
+          ),
           _buildAppListSection(),
         ],
       ),
@@ -95,10 +106,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildTotalUsageHeader(),
-                _buildWeeklyChart(height: 180),
-              ],
+              children: [_buildTotalUsageHeader(), _buildWeeklyChart()],
             ),
           ),
         ),
@@ -108,116 +116,139 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTotalUsageHeader() {
-    return BlocBuilder<AppUsageBloc, AppUsageState>(
-      builder: (context, state) {
+    return BlocSelector<AppUsageBloc, AppUsageState, int>(
+      selector: (state) {
         if (state is AppUsageLoaded) {
-          return Padding(
-            padding: const EdgeInsets.only(
-              left: 24.0,
-              right: 24.0,
-              top: 16.0,
-              bottom: 8.0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Total Usage:",
-                  style: TextStyle(
-                    fontFamily: "Manrope",
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0,
-                  ),
+          return state.totalUsage;
+        }
+        return 0;
+      },
+      builder: (context, totalUsage) {
+        if (totalUsage == 0) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Total Usage:",
+                style: TextStyle(
+                  fontFamily: "Manrope",
+                  fontSize: 24,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0,
                 ),
-                Text(
-                  AppConstants.formatDuration(
-                    usage: Duration(milliseconds: state.totalUsage),
-                  ),
-                  style: const TextStyle(
-                    fontFamily: "Manrope",
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0,
-                  ),
+              ),
+              Text(
+                AppConstants.formatDuration(
+                  usage: Duration(milliseconds: totalUsage),
+                ),
+                style: const TextStyle(
+                  fontFamily: "Manrope",
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWeeklyChart() {
+    return BlocBuilder<WeeklyAnalysisBloc, WeeklyAnalysisState>(
+      builder: (context, state) {
+        if (state is WeeklyAnalysisLoading) {
+          return Container(
+            width: double.infinity,
+            height: 200,
+            margin: EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDEEED),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              "weekly analysis loading..",
+              style: TextStyle(
+                color: Color(0xFF404847),
+                fontFamily: "Manrope",
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+            ),
+          );
+        }
+        if (state is WeeklyAnalysisLoaded) {
+          final weeklyUsage = state.weeklyUsage;
+          final selectedDate = state.selectedDate;
+          if (weeklyUsage.isEmpty) {
+            return const SizedBox(
+              height: 200,
+              child: Text(
+                "No Weekly Usage!",
+                style: TextStyle(
+                  color: Color(0xFF404847),
+                  fontFamily: "Manrope",
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+            );
+          }
+
+          return Container(
+            height: 200,
+            margin: EdgeInsets.symmetric(horizontal: 24),
+            child: SfCartesianChart(
+              margin: EdgeInsets.zero,
+              plotAreaBorderWidth: 0,
+              primaryXAxis: CategoryAxis(
+                majorGridLines: const MajorGridLines(width: 0),
+                axisLine: const AxisLine(width: 0),
+              ),
+              primaryYAxis: NumericAxis(
+                minimum: 0,
+                interval: 2,
+                labelFormat: '{value}h',
+                axisLine: const AxisLine(width: 0),
+              ),
+              tooltipBehavior: TooltipBehavior(
+                enable: true,
+                format: 'point.x : point.y h',
+              ),
+              series: <CartesianSeries>[
+                ColumnSeries<WeeklyUsagePoint, String>(
+                  onPointTap: (ChartPointDetails details) {
+                    final tappedDate = weeklyUsage[details.pointIndex!].date;
+                    context.read<WeeklyAnalysisBloc>().add(
+                      UpdateSelectedDate(selectedDate: tappedDate),
+                    );
+                    context.read<AppUsageBloc>().add(
+                      LoadAppsUsage(date: tappedDate),
+                    );
+                  },
+                  dataSource: weeklyUsage,
+                  xValueMapper: (data, _) => data.dayLabel,
+                  yValueMapper: (data, _) =>
+                      data.usageMillis / (1000 * 60 * 60),
+                  pointColorMapper: (data, _) {
+                    if (data.date == selectedDate) {
+                      return const Color(AppConstants.primary);
+                    }
+                    return const Color(AppConstants.tertiary);
+                  },
                 ),
               ],
             ),
           );
         }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
-  Widget _buildWeeklyChart({required double height}) {
-    return BlocSelector<
-      AppUsageBloc,
-      AppUsageState,
-      ({List<WeeklyUsagePoint> list, DateTime? selectedDate})
-    >(
-      selector: (state) {
-        if (state is AppUsageLoaded) {
-          return (list: state.weeklyUsage, selectedDate: state.selectedDate);
-        }
-        return (list: const [], selectedDate: null);
-      },
-      builder: (context, selectedData) {
-        final weeklyUsage = selectedData.list;
-        final selectedDate = selectedData.selectedDate;
-
-        if (weeklyUsage.isEmpty) {
-          return SizedBox(
-            height: height,
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        return SizedBox(
-          height: height,
-          child: SfCartesianChart(
-            plotAreaBorderWidth: 0,
-            primaryXAxis: CategoryAxis(
-              majorGridLines: const MajorGridLines(width: 0),
-              axisLine: const AxisLine(width: 0),
-            ),
-            primaryYAxis: NumericAxis(
-              minimum: 0,
-              interval: 2,
-              labelFormat: '{value}h',
-              axisLine: const AxisLine(width: 0),
-            ),
-            tooltipBehavior: TooltipBehavior(
-              enable: true,
-              format: 'point.x : point.y h',
-            ),
-            series: <CartesianSeries>[
-              ColumnSeries<WeeklyUsagePoint, String>(
-                onPointTap: (ChartPointDetails details) {
-                  final tappedDate = weeklyUsage[details.pointIndex!].date;
-                  final totalUsage =
-                      weeklyUsage[details.pointIndex!].usageMillis;
-                  context.read<AppUsageBloc>().add(
-                    LoadAppsUsage(date: tappedDate, totalUsage: totalUsage),
-                  );
-                },
-                dataSource: weeklyUsage,
-                xValueMapper: (data, _) => data.dayLabel,
-                yValueMapper: (data, _) => data.usageMillis / (1000 * 60 * 60),
-                pointColorMapper: (data, _) {
-                  if (selectedDate != null &&
-                      data.date.year == selectedDate.year &&
-                      data.date.month == selectedDate.month &&
-                      data.date.day == selectedDate.day) {
-                    return const Color(AppConstants.primary);
-                  }
-                  return const Color(AppConstants.tertiary);
-                },
-              ),
-            ],
-          ),
-        );
+        return SizedBox();
       },
     );
   }
