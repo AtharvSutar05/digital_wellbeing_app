@@ -9,12 +9,11 @@ abstract class AppUsageEvent extends Equatable {
 
 class LoadAppsUsage extends AppUsageEvent {
   final DateTime date;
-  final int totalUsage;
 
-  const LoadAppsUsage({required this.date, required this.totalUsage});
+  const LoadAppsUsage({required this.date});
 
   @override
-  List<Object?> get props => [date, totalUsage];
+  List<Object?> get props => [date];
 }
 
 class UpdateCategory extends AppUsageEvent {

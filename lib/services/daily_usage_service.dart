@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/daily_usage_model.dart';
 import 'package:wellbeing_app/models/weekly_usage_point.dart';
+import 'package:wellbeing_app/utils/extensions.dart';
 
 class DailyUsageService {
   static final DailyUsageService _instance = DailyUsageService._internal();
@@ -49,27 +50,18 @@ class DailyUsageService {
     return _dailyUsageBox.values.toList();
   }
 
-  // Inside DailyUsageService
 
-  List<WeeklyUsagePoint> getCurrentWeekUsage({
-    int? liveTodayUsage, // Make this optional
-  }) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final daysSinceSunday = now.weekday % 7;
+  List<WeeklyUsagePoint> getCurrentWeekUsage({int? liveTodayUsage}) {
+    final today = DateTime.now().toDateOnly();
+    final daysSinceSunday = today.weekday % 7;
     final startOfWeek = today.subtract(Duration(days: daysSinceSunday));
-
-    bool isSameDay(DateTime a, DateTime b) {
-      return a.year == b.year && a.month == b.month && a.day == b.day;
-    }
 
     return List.generate(7, (i) {
       final day = startOfWeek.add(Duration(days: i));
       final formattedDate = DateFormat("yyyy-MM-dd").format(day);
 
-      if (isSameDay(day, today)) {
-        // If we provided a live current-day value, use it.
-        // Otherwise, try to read what's currently saved in the Hive box for today.
+      // If it's today, prioritize live statistics over old disk data
+      if (day.isAtSameMomentAs(today)) {
         if (liveTodayUsage != null) {
           return WeeklyUsagePoint(date: day, usageMillis: liveTodayUsage);
         }
@@ -77,8 +69,8 @@ class DailyUsageService {
         return WeeklyUsagePoint(date: day, usageMillis: todayRecord?.totalUsageMillis ?? 0);
       }
 
+      // Future days return 0, past days read from Hive
       final record = day.isAfter(today) ? null : _dailyUsageBox.get(formattedDate);
-
       return WeeklyUsagePoint(
         date: day,
         usageMillis: record?.totalUsageMillis ?? 0,
