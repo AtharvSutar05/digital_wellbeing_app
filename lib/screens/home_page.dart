@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive/hive.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
 import 'package:wellbeing_app/blocs/weekly_analysis/weekly_analysis_bloc.dart';
-import 'package:wellbeing_app/blocs/weekly_analysis/weekly_analysis_state.dart';
 import 'package:wellbeing_app/blocs/weekly_analysis/weekly_usage_event.dart';
+import 'package:wellbeing_app/components/analysis/circular_chart_section.dart';
+import 'package:wellbeing_app/components/analysis/weekly_analysis_section.dart';
+import 'package:wellbeing_app/components/buttons/analysis_mode_button.dart';
 import 'package:wellbeing_app/components/cards/app_info_card.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
-import 'package:wellbeing_app/models/weekly_usage_point.dart';
 import 'package:wellbeing_app/services/usage_access_service.dart';
 import 'package:wellbeing_app/utils/app_constants.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:wellbeing_app/utils/enums.dart';
 import 'package:wellbeing_app/utils/extensions.dart';
 
 class HomePage extends StatefulWidget {
@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   late final UsageAccessService _usageAccessService;
   late final AppLifecycleListener _lifecycleListener;
   bool? _usageAccessGranted;
+  Analysis analysisMode = Analysis.today;
 
   @override
   void initState() {
@@ -81,14 +82,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.only(top: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [_buildTotalUsageHeader(), _buildWeeklyChart()],
-            ),
-          ),
+          _buildAnalysisAndUsageSection(),
           _buildAppListSection(),
         ],
       ),
@@ -99,23 +93,63 @@ class _HomePageState extends State<HomePage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [_buildTotalUsageHeader(), _buildWeeklyChart()],
-            ),
-          ),
-        ),
+        _buildAnalysisAndUsageSection(),
         Expanded(child: _buildAppListSection()),
       ],
     );
   }
 
-  Widget _buildTotalUsageHeader() {
+  Widget _buildAnalysisAndUsageSection() {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: SizedBox(
+        child: Stack(
+          children: [
+            Positioned(
+              right: 24.0,
+              top: 16.0,
+              child: AnalysisModeButton(
+                analysisMode: analysisMode,
+                onChanged: (value) {
+                  if (value == Analysis.today) {
+                    context.read<WeeklyAnalysisBloc>().add(
+                      UpdateSelectedDate(
+                        selectedDate: DateTime.now().toDateOnly(),
+                      ),
+                    );
+
+                    context.read<AppUsageBloc>().add(
+                      LoadAppsUsage(date: DateTime.now().toDateOnly()),
+                    );
+                  }
+
+                  setState(() {
+                    analysisMode = value;
+                  });
+                },
+              ),
+            ),
+            if (analysisMode == Analysis.week)
+              Positioned(
+                left: 24.0,
+                top: 16.0,
+                child: _buildTotalUsageSection(),
+              ),
+            Positioned(
+              left: 24.0,
+              right: 24.0,
+              bottom: 16.0,
+              child: analysisMode == Analysis.today
+                  ? const CircularChartSection()
+                  : const WeeklyAnalysisSection(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalUsageSection() {
     return BlocSelector<AppUsageBloc, AppUsageState, int>(
       selector: (state) {
         if (state is AppUsageLoaded) {
@@ -127,128 +161,32 @@ class _HomePageState extends State<HomePage> {
         if (totalUsage == 0) {
           return const SizedBox.shrink();
         }
-        return Padding(
-          padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Total Usage:",
-                style: TextStyle(
-                  fontFamily: "Manrope",
-                  fontSize: 24,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0,
-                ),
-              ),
-              Text(
-                AppConstants.formatDuration(
-                  usage: Duration(milliseconds: totalUsage),
-                ),
-                style: const TextStyle(
-                  fontFamily: "Manrope",
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildWeeklyChart() {
-    return BlocBuilder<WeeklyAnalysisBloc, WeeklyAnalysisState>(
-      builder: (context, state) {
-        if (state is WeeklyAnalysisLoading) {
-          return Container(
-            width: double.infinity,
-            height: 200,
-            margin: EdgeInsets.symmetric(horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEDEEED),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              "weekly analysis loading..",
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Total Usage:",
               style: TextStyle(
-                color: Color(0xFF404847),
                 fontFamily: "Manrope",
+                fontSize: 24,
                 fontWeight: FontWeight.w400,
-                fontSize: 14,
+                letterSpacing: 0,
               ),
             ),
-          );
-        }
-        if (state is WeeklyAnalysisLoaded) {
-          final weeklyUsage = state.weeklyUsage;
-          final selectedDate = state.selectedDate;
-          if (weeklyUsage.isEmpty) {
-            return const SizedBox(
-              height: 200,
-              child: Text(
-                "No Weekly Usage!",
-                style: TextStyle(
-                  color: Color(0xFF404847),
-                  fontFamily: "Manrope",
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                ),
+            Text(
+              AppConstants.formatDuration(
+                usage: Duration(milliseconds: totalUsage),
               ),
-            );
-          }
-
-          return Container(
-            height: 200,
-            margin: EdgeInsets.symmetric(horizontal: 24),
-            child: SfCartesianChart(
-              margin: EdgeInsets.zero,
-              plotAreaBorderWidth: 0,
-              primaryXAxis: CategoryAxis(
-                majorGridLines: const MajorGridLines(width: 0),
-                axisLine: const AxisLine(width: 0),
+              style: const TextStyle(
+                fontFamily: "Manrope",
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
               ),
-              primaryYAxis: NumericAxis(
-                minimum: 0,
-                interval: 2,
-                labelFormat: '{value}h',
-                axisLine: const AxisLine(width: 0),
-              ),
-              tooltipBehavior: TooltipBehavior(
-                enable: true,
-                format: 'point.x : point.y h',
-              ),
-              series: <CartesianSeries>[
-                ColumnSeries<WeeklyUsagePoint, String>(
-                  onPointTap: (ChartPointDetails details) {
-                    final tappedDate = weeklyUsage[details.pointIndex!].date;
-                    context.read<WeeklyAnalysisBloc>().add(
-                      UpdateSelectedDate(selectedDate: tappedDate),
-                    );
-                    context.read<AppUsageBloc>().add(
-                      LoadAppsUsage(date: tappedDate),
-                    );
-                  },
-                  dataSource: weeklyUsage,
-                  xValueMapper: (data, _) => data.dayLabel,
-                  yValueMapper: (data, _) =>
-                      data.usageMillis / (1000 * 60 * 60),
-                  pointColorMapper: (data, _) {
-                    if (data.date == selectedDate) {
-                      return const Color(AppConstants.primary);
-                    }
-                    return const Color(AppConstants.tertiary);
-                  },
-                ),
-              ],
             ),
-          );
-        }
-        return SizedBox();
+          ],
+        );
       },
     );
   }

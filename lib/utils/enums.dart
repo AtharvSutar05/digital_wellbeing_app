@@ -9,6 +9,8 @@ enum AppCategory {
   development,
 }
 
+enum  Analysis {today, week}
+
 extension AppCategoryExtension on AppCategory {
   String get displayName {
     switch (this) {
