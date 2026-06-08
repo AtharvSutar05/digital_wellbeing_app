@@ -14,80 +14,54 @@ class AnalysisModeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<Analysis>(
-      menuPadding: const EdgeInsets.symmetric(vertical: 6),
-      color: Colors.white,
-      elevation: 8,
-      shadowColor: Colors.black.withAlpha(30),
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: onChanged,
-      offset: const Offset(0, 44),
-      itemBuilder: (context) => [
-        _buildMenuItem(Analysis.today, 'Today'),
-        _buildMenuItem(Analysis.week, 'Week'),
+    return SegmentedButton<Analysis>(
+      showSelectedIcon: false,
+      segments: const [
+        ButtonSegment<Analysis>(
+          value: Analysis.today,
+          label: Text('Today'),
+        ),
+        ButtonSegment<Analysis>(
+          value: Analysis.week,
+          label: Text('Week'),
+        ),
       ],
-      child: _buildTrigger(),
-    );
-  }
-
-  PopupMenuItem<Analysis> _buildMenuItem(Analysis value, String label) {
-    final isSelected = analysisMode == value;
-    return PopupMenuItem<Analysis>(
-      value: value,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      height: 40,
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              fontSize: 14,
-              color: isSelected
-                  ? const Color(0xFF191C1C)
-                  : const Color(0xFF7A8A89),
-            ),
+      selected: {analysisMode},
+      onSelectionChanged: (selection) {
+        onChanged(selection.first);
+      },
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const Color(AppConstants.primary);
+          }
+          return const Color(0xFFEDEEED);
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return const Color(0xFF191C1C);
+        }),
+        textStyle: WidgetStateProperty.all(
+          const TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
-          const Spacer(),
-          if (isSelected)
-            const Icon(
-              Icons.check_rounded,
-              size: 15,
-              color: Color(AppConstants.primary),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrigger() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDEEED),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            analysisMode == Analysis.today ? 'Today' : 'Week',
-            style: const TextStyle(
-              fontFamily: 'Manrope',
-              fontWeight: FontWeight.w500,
-              fontSize: 13,
-              color: Color(0xFF191C1C),
-            ),
+        ),
+        padding: WidgetStateProperty.all(
+          const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
-          const SizedBox(width: 6),
-          const Icon(
-            Icons.arrow_drop_down_rounded,
-            size: 14,
-            color: Color(0xFF7A8A89),
+        ),
+        side: WidgetStateProperty.all(BorderSide.none),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
-        ],
+        ),
       ),
     );
   }
