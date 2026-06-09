@@ -52,6 +52,26 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _onAnalysisChanged(Analysis value) {
+    if (value == Analysis.today) {
+      context.read<WeeklyAnalysisBloc>().add(
+        UpdateSelectedDate(
+          selectedDate: DateTime.now().toDateOnly(),
+        ),
+      );
+
+      context.read<AppUsageBloc>().add(
+        LoadAppsUsage(
+          date: DateTime.now().toDateOnly(),
+        ),
+      );
+    }
+
+    setState(() {
+      analysisMode = value;
+    });
+  }
+
   @override
   void dispose() {
     _lifecycleListener.dispose();
@@ -94,7 +114,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildAnalysisAndUsageSection(),
-        Expanded(child: _buildAppListSection()),
+        _buildAppListSection(),
       ],
     );
   }
@@ -102,47 +122,29 @@ class _HomePageState extends State<HomePage> {
   Widget _buildAnalysisAndUsageSection() {
     return AspectRatio(
       aspectRatio: 1,
-      child: SizedBox(
-        child: Stack(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+        child: Column(
           children: [
-            Positioned(
-              right: 24.0,
-              top: 16.0,
-              child: AnalysisModeButton(
-                analysisMode: analysisMode,
-                onChanged: (value) {
-                  if (value == Analysis.today) {
-                    context.read<WeeklyAnalysisBloc>().add(
-                      UpdateSelectedDate(
-                        selectedDate: DateTime.now().toDateOnly(),
-                      ),
-                    );
-
-                    context.read<AppUsageBloc>().add(
-                      LoadAppsUsage(date: DateTime.now().toDateOnly()),
-                    );
-                  }
-
-                  setState(() {
-                    analysisMode = value;
-                  });
-                },
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: analysisMode == Analysis.week
+                      ? _buildTotalUsageSection()
+                      : const SizedBox(),
+                ),
+                AnalysisModeButton(
+                  analysisMode: analysisMode,
+                  onChanged: _onAnalysisChanged,
+                ),
+              ],
             ),
-            if (analysisMode == Analysis.week)
-              Positioned(
-                left: 24.0,
-                top: 16.0,
-                child: _buildTotalUsageSection(),
-              ),
-            Positioned(
-              left: 24.0,
-              right: 24.0,
-              bottom: 16.0,
+            const SizedBox(height: 16.0),
+            Expanded(
               child: analysisMode == Analysis.today
                   ? const CircularChartSection()
                   : const WeeklyAnalysisSection(),
-            ),
+            )
           ],
         ),
       ),
