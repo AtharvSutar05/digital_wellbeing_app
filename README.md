@@ -40,7 +40,10 @@ Features include:
 
 ## Screenshots
 
-*Add screenshots here*
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/54755d3a-a8e0-42eb-9c2e-dff9e05f68ba" width="30%" alt="Screenshot 1" />
+  <img src="https://github.com/user-attachments/assets/aa21a7ef-9d0a-42d5-bd09-8e9f8f87e4b9" width="30%" alt="Screenshot 2" />
+</p>
 
 ## Tech Stack
 
