@@ -92,16 +92,6 @@ This project aims to help users:
 * [x] Usage progress indicators
 * [x] Android UsageStats integration
 
-## Planned Features
-
-* [ ] App usage notifications
-* [ ] Weekly wellbeing reports
-* [ ] Usage goals and achievements
-* [ ] Focus mode
-* [ ] App category insights
-* [ ] Usage history trends
-* [ ] Backup & restore settings
-
 ## Permissions Required
 
 ### Usage Access Permission
