@@ -25,16 +25,17 @@ class WeeklyAnalysisBloc extends Bloc<WeeklyUsageEvent, WeeklyAnalysisState> {
       final DateTime today = DateTime.now().toDateOnly();
 
       // 1. Calculate today's live total usage from the system stats
-      final List<AppUsageModel> todayAppsUsage = await _appUsageService.getUsageStats();
-      int todayTotalUsage = 0;
-      for (final app in todayAppsUsage) {
-        todayTotalUsage += app.usageMillis;
-      }
+      final List<AppUsageModel> todayAppsUsage = await _appUsageService
+          .getUsageStats();
+
+      final todayTotalUsage = todayAppsUsage.fold<int>(
+        0,
+        (sum, app) => sum + app.usageMillis,
+      );
 
       // 2. Pass that live total directly into your week generator
-      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService.getCurrentWeekUsage(
-        liveTodayUsage: todayTotalUsage,
-      );
+      List<WeeklyUsagePoint> weeklyUsage = _dailyUsageService
+          .getCurrentWeekUsage(liveTodayUsage: todayTotalUsage);
 
       // 3. Emit everything safely
       emit(

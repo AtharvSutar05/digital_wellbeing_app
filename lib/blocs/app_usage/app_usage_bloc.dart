@@ -1,24 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_state.dart';
-import 'package:wellbeing_app/models/app_usage_model.dart';
 import 'package:wellbeing_app/models/custom_app_info.dart';
-import 'package:wellbeing_app/models/app_meta_data_model.dart';
-import 'package:wellbeing_app/services/app_info_service.dart';
+import 'package:wellbeing_app/repositories/app_usage_repository.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
-import 'package:wellbeing_app/services/app_usage_service.dart';
-import 'package:wellbeing_app/services/daily_usage_service.dart';
-import 'package:wellbeing_app/utils/enums.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:wellbeing_app/utils/extensions.dart';
 
 class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
-  final AppUsageService _appUsageService = AppUsageService();
-  final AppInfoService _appInfoService = AppInfoService();
-  final DailyUsageService _dailyUsageService = DailyUsageService();
+  final AppUsageRepository _repository;
   final AppMetaDataCacheService _appMetaDataCacheService =
       AppMetaDataCacheService();
 
-  AppUsageBloc() : super(AppUsageLoading()) {
+  AppUsageBloc({required AppUsageRepository repository}) : _repository = repository, super(AppUsageLoading()) {
     on<LoadAppsUsage>(onLoadAppsUsage);
     on<UpdateCategory>(onUpdateCategory);
     on<UpdateDailyLimit>(onUpdateDailyLimit);
@@ -32,66 +26,15 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     try {
 
       emit(AppUsageLoading());
-      List<AppUsageModel> appsUsage;
 
-      final selectedDate = DateTime(
-        event.date.year,
-        event.date.month,
-        event.date.day,
+      final appInfoList = await _repository.getUsageForDate(event.date);
+
+      // Calculate total usage
+      final totalUsage = appInfoList.fold<int>(
+          0, (sum, app) => sum + app.usage.inMilliseconds
       );
 
-      final isToday =
-          selectedDate.year == DateTime.now().year &&
-          selectedDate.month == DateTime.now().month &&
-          selectedDate.day == DateTime.now().day;
-
-      if (isToday) {
-        appsUsage = await _appUsageService.getUsageStats();
-      } else {
-        final dailyUsage = _dailyUsageService.getUsageByDate(selectedDate);
-        appsUsage = dailyUsage?.apps ?? [];
-      }
-
-      Map<String, AppMetaDataModel>? appInfoMap = await _appMetaDataCacheService
-          .loadAll();
-
-      // empty local storage
-      if (appInfoMap == null) {
-        final packageNames = appsUsage.map((e) => e.packageName).toList();
-        final appInfoList = await _appInfoService.getAppInfoList(packageNames);
-        await _appMetaDataCacheService.saveAll(appInfoList);
-        appInfoMap = await _appMetaDataCacheService.loadAll() ?? {};
-      }
-
-      final missingPackageNames = appsUsage
-          .where((usage) => !appInfoMap!.containsKey(usage.packageName))
-          .map((usage) => usage.packageName)
-          .toList();
-
-      if (missingPackageNames.isNotEmpty) {
-        final missingAppInfoList = await _appInfoService.getAppInfoList(
-          missingPackageNames,
-        );
-        await _appMetaDataCacheService.saveAll(missingAppInfoList);
-        final now = DateTime.now();
-        final missingAppMap = {
-          for (final app in missingAppInfoList)
-            app.packageName: AppMetaDataModel(
-              packageName: app.packageName,
-              name: app.name,
-              categoryIndex: app.category.value,
-              isLaunchable: app.isLaunchableApp,
-              lastSynced: now,
-            ),
-        };
-        appInfoMap.addAll(missingAppMap);
-      }
-
-      final appInfoList = makeCustomAppInfoList(appsUsage, appInfoMap);
-      int totalUsage = 0;
-      for (final app in appInfoList) {
-        totalUsage += app.usage.inMilliseconds;
-      }
+      final selectedDate = DateTime.now().toDateOnly();
 
       emit(
         AppUsageLoaded(
@@ -105,39 +48,6 @@ class AppUsageBloc extends Bloc<AppUsageEvent, AppUsageState> {
     } finally {
       FlutterNativeSplash.remove();
     }
-  }
-
-  List<CustomAppInfo> makeCustomAppInfoList(
-    List<AppUsageModel> appsUsage,
-    Map<String, AppMetaDataModel> appInfoMap,
-  ) {
-    final customAppInfoList =
-        appsUsage
-            .where((usage) {
-              final app = appInfoMap[usage.packageName];
-              return Duration(milliseconds: usage.usageMillis).inSeconds > 0 &&
-                  app?.isLaunchable == true &&
-                  app?.isTracked != false;
-            })
-            .map((usage) {
-              final app = appInfoMap[usage.packageName];
-              return CustomAppInfo(
-                packageName: usage.packageName,
-                name: app?.name ?? usage.packageName,
-                usage: Duration(milliseconds: usage.usageMillis),
-                category: appCategoryConverter(
-                  categoryInt: app?.categoryIndex,
-                  packageName: usage.packageName,
-                ),
-                dailyLimit: app?.dailyLimit,
-                isBlocked: app?.isBlocked,
-                isLaunchable: app?.isLaunchable,
-              );
-            })
-            .toList()
-          ..sort((a, b) => b.usage.compareTo(a.usage));
-
-    return customAppInfoList;
   }
 
   Future<void> onUpdateCategory(

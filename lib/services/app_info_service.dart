@@ -22,12 +22,13 @@ class AppInfoService {
   }
 
   Future<List<AppInfo>> getAppInfoList(List<String> packageNames) async {
-    List<AppInfo> appInfoList = [];
-    for(final packageName in packageNames) {
-      final appInfo = await InstalledApps.getAppInfo(packageName);
-      if(appInfo != null) appInfoList.add(appInfo);
-    }
-    return appInfoList;
+    final future = packageNames.map(
+      InstalledApps.getAppInfo,
+    );
+    final result = await Future.wait(future);
+    return result
+        .whereType<AppInfo>()
+        .toList();
   }
 
   Future<Uint8List?> getAppIcon(String packageName) {

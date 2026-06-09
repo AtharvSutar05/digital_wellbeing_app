@@ -5,6 +5,7 @@ import 'package:wellbeing_app/blocs/app_usage/app_usage_bloc.dart';
 import 'package:wellbeing_app/blocs/app_usage/app_usage_event.dart';
 import 'package:wellbeing_app/blocs/weekly_analysis/weekly_analysis_bloc.dart';
 import 'package:wellbeing_app/blocs/weekly_analysis/weekly_usage_event.dart';
+import 'package:wellbeing_app/repositories/app_usage_repository.dart';
 import 'package:wellbeing_app/screens/home_page.dart';
 import 'package:wellbeing_app/services/app_meta_data_cache_service.dart';
 import 'package:wellbeing_app/services/daily_usage_service.dart';
@@ -31,12 +32,17 @@ void main() async {
 
   // services
   final appMetaDataCacheService = AppMetaDataCacheService();
-
   await appMetaDataCacheService.init();
 
   final dailyUsageService = DailyUsageService();
-
   await dailyUsageService.init();
+
+  // Initialize the Repository and inject dependencies
+  final appUsageRepository = AppUsageRepositoryImpl(
+    appMetaDataCacheService: appMetaDataCacheService,
+    dailyUsageService: dailyUsageService,
+    // AppUsageService and AppInfoService will default to their standard constructors inside the repo
+  );
 
   // import pending worker data
   await PendingUsageSyncService().syncPendingUsage();
@@ -46,7 +52,7 @@ void main() async {
       providers: [
         BlocProvider(
           create: (_) =>
-              AppUsageBloc()
+              AppUsageBloc(repository: appUsageRepository)
                 ..add(LoadAppsUsage(date: DateTime.now().toDateOnly())),
         ),
         BlocProvider(
